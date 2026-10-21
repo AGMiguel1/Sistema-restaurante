@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Restaurante.Infrastructure.Repositories
@@ -21,116 +20,124 @@ namespace Restaurante.Infrastructure.Repositories
             _context = context;
         }
 
-        // Comprueba si existen reservas que se cruzan con el horario.
+        // Comprueba si existen reservas que se cruzan con el horario
         public async Task<bool> ExisteCruceHorarioAsync(
             int mesaId,
             DateTime inicio,
             DateTime fin,
-            int? excluirReservaId = null,
-            CancellationToken cancellationToken = default)
+            int? excluirReservaId = null)
         {
-            return await _context.Reservas.AnyAsync(r =>
-                r.MesaId == mesaId &&
-                r.Estado != EstadoReserva.Cancelada &&
-                r.FechaHoraInicio < fin &&
-                r.FechaHoraFin > inicio &&
-                (!excluirReservaId.HasValue ||
-                 r.Id != excluirReservaId.Value),
-                cancellationToken);
+            var consulta = _context.Reservas
+                .Where(r => r.MesaId == mesaId)
+                .Where(r => r.Estado != EstadoReserva.Cancelada)
+                .Where(r =>
+                    r.FechaHoraInicio < fin &&
+                    r.FechaHoraFin > inicio);
+
+            // Permite ignorar una reserva si se indica su identificador
+            if (excluirReservaId.HasValue)
+            {
+                consulta = consulta.Where(r =>
+                    r.Id != excluirReservaId.Value);
+            }
+
+            return await consulta.AnyAsync();
         }
 
+        // Registra el cliente y la reserva dentro de una transaccion
         public async Task<Reserva> RegistrarReservaConBloqueoAsync(
-            CrearReservaDto dto,
-            CancellationToken cancellationToken = default)
+            CrearReservaDto dto)
         {
-            // Todas las operaciones se confirman juntas
-            // Si ocurre un error, la transaccion se revierte al desecharse
             await using var transaccion =
                 await _context.Database.BeginTransactionAsync(
-                    IsolationLevel.ReadCommitted,
-                    cancellationToken);
+                    IsolationLevel.ReadCommitted);
 
-            // Bloquea la mesa mientras se verifica y registra la reserva
-            // Otra solicitud para la misma mesa debe esperar
-            // El valor {0} se envía como parámetro a MySQL
-            var mesas = await _context.Mesas
-                .FromSqlRaw(
-                    "SELECT * FROM mesas WHERE Id = {0} FOR UPDATE",
-                    dto.MesaId)
-                .ToListAsync(cancellationToken);
-
-            var mesa = mesas.FirstOrDefault();
-
-            // Verifica que la mesa exista
-            if (mesa == null)
+            try
             {
-                throw new KeyNotFoundException(
-                    "La mesa no existe.");
+                // Bloquea la fila de la mesa hasta terminar la transacción
+                var mesas = await _context.Mesas
+                    .FromSqlRaw(
+                        "SELECT * FROM mesas WHERE Id = {0} FOR UPDATE",
+                        dto.MesaId)
+                    .ToListAsync();
+
+                var mesa = mesas.FirstOrDefault();
+
+                // Verifica que la mesa exista
+                if (mesa == null)
+                {
+                    throw new KeyNotFoundException(
+                        "La mesa seleccionada no existe.");
+                }
+
+                // Verifica que haya capacidad suficiente
+                if (dto.CantidadPersonas > mesa.Capacidad)
+                {
+                    throw new ArgumentException(
+                        "La mesa no tiene capacidad suficiente.");
+                }
+
+                // Comprueba el horario mientras la mesa está bloqueada
+                var existeCruce = await ExisteCruceHorarioAsync(
+                    dto.MesaId,
+                    dto.FechaHoraInicio,
+                    dto.FechaHoraFin);
+
+                if (existeCruce)
+                {
+                    var error = new InvalidOperationException(
+                        "La mesa ya tiene una reserva en ese horario.");
+
+                    // Permite al controlador identificar el conflicto
+                    error.Data["ConflictoReserva"] = true;
+
+                    throw error;
+                }
+
+                // Crea los datos del cliente
+                var cliente = new Cliente
+                {
+                    Nombre = dto.NombreCliente.Trim(),
+                    Telefono = dto.TelefonoCliente.Trim(),
+                    Correo = string.IsNullOrWhiteSpace(dto.CorreoCliente)
+                        ? null
+                        : dto.CorreoCliente.Trim()
+                };
+
+                // Crea una reserva confirmada
+                var reserva = new Reserva
+                {
+                    // Código provisional hasta obtener el Id
+                    Codigo = "RES-" + Guid.NewGuid().ToString("N"),
+                    Cliente = cliente,
+                    MesaId = mesa.Id,
+                    Mesa = mesa,
+                    FechaHoraInicio = dto.FechaHoraInicio,
+                    FechaHoraFin = dto.FechaHoraFin,
+                    CantidadPersonas = dto.CantidadPersonas,
+                    Estado = EstadoReserva.Confirmada,
+                    FechaRegistro = DateTime.UtcNow
+                };
+
+                // Guarda el cliente y la reserva para obtener sus Id
+                _context.Reservas.Add(reserva);
+                await _context.SaveChangesAsync();
+
+                // Genera el código definitivo: RES-0001, 
+                reserva.Codigo = $"RES-{reserva.Id:D4}";
+                await _context.SaveChangesAsync();
+
+                // Confirma todos los cambios
+                await transaccion.CommitAsync();
+
+                return reserva;
             }
-
-            // Verifica que tenga capacidad suficiente
-            if (dto.CantidadPersonas > mesa.Capacidad)
+            catch
             {
-                throw new ArgumentException(
-                    $"La mesa admite hasta {mesa.Capacidad} personas.");
+                // Revierte los cambios si ocurre un error
+                await transaccion.RollbackAsync();
+                throw;
             }
-
-            // Comprueba el horario mientras la mesa está bloqueada
-            var existeCruce = await ExisteCruceHorarioAsync(
-                dto.MesaId,
-                dto.FechaHoraInicio,
-                dto.FechaHoraFin,
-                cancellationToken: cancellationToken);
-
-            if (existeCruce)
-            {
-                var error = new InvalidOperationException(
-                    "La mesa ya tiene una reserva en ese horario.");
-
-                // Permite al controlador identificar este conflicto
-                error.Data["ConflictoReserva"] = true;
-
-                throw error;
-            }
-
-            // Crea al cliente con los datos recibidos
-            var cliente = new Cliente
-            {
-                Nombre = dto.NombreCliente.Trim(),
-                Telefono = dto.TelefonoCliente.Trim(),
-                Correo = string.IsNullOrWhiteSpace(dto.CorreoCliente)
-                    ? null
-                    : dto.CorreoCliente.Trim()
-            };
-
-            // Crea la reserva relacionada con el cliente y la mesa
-            var reserva = new Reserva
-            {
-                // Código provisional hasta obtener el Id de MySQL
-                Codigo = "RES-" + Guid.NewGuid().ToString("N"),
-                Cliente = cliente,
-                MesaId = mesa.Id,
-                Mesa = mesa,
-                FechaHoraInicio = dto.FechaHoraInicio,
-                FechaHoraFin = dto.FechaHoraFin,
-                CantidadPersonas = dto.CantidadPersonas,
-                Estado = EstadoReserva.Confirmada,
-                FechaRegistro = DateTime.UtcNow
-            };
-
-            // Guarda el cliente y la reserva para obtener sus Id
-            _context.Reservas.Add(reserva);
-            await _context.SaveChangesAsync(cancellationToken);
-
-            // Reemplaza el código provisional por uno sencillo.
-            // Ejemplo: Id 3 se convierte en RES-0003
-            reserva.Codigo = $"RES-{reserva.Id:D4}";
-            await _context.SaveChangesAsync(cancellationToken);
-
-            // Confirma los cambios y libera el bloqueo de la mesa
-            await transaccion.CommitAsync(cancellationToken);
-
-            return reserva;
         }
     }
 }

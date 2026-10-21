@@ -2,13 +2,11 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Restaurante.Api.Response;
 using Restaurante.Core.DTOs;
-using Restaurante.Core.Entities;
 using Restaurante.Core.Interfaces;
 using Restaurante.Services.Validators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Restaurante.Api.Controllers
@@ -34,12 +32,10 @@ namespace Restaurante.Api.Controllers
         // POST: api/reservas
         [HttpPost]
         public async Task<IActionResult> RegistrarReserva(
-            [FromBody] CrearReservaDto dto,
-            CancellationToken cancellationToken)
+            [FromBody] CrearReservaDto dto)
         {
-            // Verifica los datos recibidos
-            var validacion = await _validador.ValidateAsync(
-                dto, cancellationToken);
+            // Valida los datos del cliente, las fechas y las personas.
+            var validacion = await _validador.ValidateAsync(dto);
 
             if (!validacion.IsValid)
             {
@@ -51,42 +47,40 @@ namespace Restaurante.Api.Controllers
                     new ApiResponse<List<string>>(errores));
             }
 
-            Reserva reserva;
-
             try
             {
-                // Registra la reserva y protege la mesa
-                // contra reservas simultáneas
-                reserva = await _reservaRepository
-                    .RegistrarReservaConBloqueoAsync(
-                        dto, cancellationToken);
+                // Registra el cliente y la reserva.
+                var reserva = await _reservaRepository
+                    .RegistrarReservaConBloqueoAsync(dto);
+
+                // Convierte la reserva a su DTO de respuesta.
+                var reservaDto = _mapper
+                    .Map<ReservaDetalleDto>(reserva);
+
+                // Devuelve HTTP 201 con la reserva creada.
+                return StatusCode(
+                    201,
+                    new ApiResponse<ReservaDetalleDto>(reservaDto));
             }
             catch (KeyNotFoundException error)
             {
-                // La mesa no existe
+                // HTTP 404: la mesa no existe.
                 return NotFound(
                     new ApiResponse<string>(error.Message));
             }
             catch (ArgumentException error)
             {
-                // La mesa está inactiva o tiene capacidad insuficiente
+                // HTTP 400: capacidad insuficiente.
                 return BadRequest(
                     new ApiResponse<string>(error.Message));
             }
             catch (InvalidOperationException error)
                 when (error.Data.Contains("ConflictoReserva"))
             {
-                // La mesa ya tiene una reserva en ese horario
-                return Conflict(new ApiResponse<string>(error.Message));
+                // HTTP 409: la mesa tiene una reserva superpuesta.
+                return Conflict(
+                    new ApiResponse<string>(error.Message));
             }
-
-            // Convierte la reserva al DTO de confirmación.
-            var reservaDto = _mapper.Map<ReservaDetalleDto>(reserva);
-
-            // Devuelve HTTP 201 con la reserva registrada.
-            return StatusCode(
-                201,
-                new ApiResponse<ReservaDetalleDto>(reservaDto));
         }
     }
 }

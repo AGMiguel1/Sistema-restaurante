@@ -4,8 +4,6 @@ using Restaurante.Core.Interfaces;
 using Restaurante.Infrastructure.Data;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Restaurante.Infrastructure.Repositories
@@ -19,41 +17,30 @@ namespace Restaurante.Infrastructure.Repositories
             _context = context;
         }
 
-        // Consulta mesas con capacidad suficiente y horario libre
-        public async Task<IReadOnlyList<Mesa>> ObtenerMesasDisponiblesAsync(
+        // Obtiene las mesas con capacidad suficiente y sin cruces de horario
+        public async Task<IEnumerable<Mesa>> ObtenerMesasDisponiblesAsync(
             DateTime inicio,
             DateTime fin,
-            int capacidadMinima,
-            CancellationToken cancellationToken = default)
+            int cantidadPersonas)
         {
             var mesas = await _context.Mesas
-                .AsNoTracking()
-
-                // Verifica la capacidad de la mesa
-                .Where(m => m.Capacidad >= capacidadMinima)
-
-                // Excluye mesas con reservas que se cruzan con el horario
+                .Where(m => m.Capacidad >= cantidadPersonas)
                 .Where(m => !m.Reservas.Any(r =>
                     r.Estado != EstadoReserva.Cancelada &&
                     r.FechaHoraInicio < fin &&
                     r.FechaHoraFin > inicio))
-
                 .OrderBy(m => m.Capacidad)
                 .ThenBy(m => m.Numero)
-                .ToListAsync(cancellationToken);
+                .ToListAsync();
 
             return mesas;
         }
 
         // Busca una mesa por su identificador
-        public async Task<Mesa?> ObtenerPorIdAsync(
-            int id,
-            CancellationToken cancellationToken = default)
+        public async Task<Mesa?> ObtenerPorIdAsync(int id)
         {
             var mesa = await _context.Mesas
-                .FirstOrDefaultAsync(
-                    m => m.Id == id,
-                    cancellationToken);
+                .FirstOrDefaultAsync(m => m.Id == id);
 
             return mesa;
         }
