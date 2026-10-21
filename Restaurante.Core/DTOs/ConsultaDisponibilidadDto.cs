@@ -13,5 +13,6 @@ namespace Restaurante.Core.DTOs
 
         // Cantidad de personas que ocuparán la mesa; debe ser mayor a cero.
         public int CantidadPersonas { get; set; }
+        //
     }
 }
