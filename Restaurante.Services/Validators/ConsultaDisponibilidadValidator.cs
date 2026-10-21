@@ -9,12 +9,12 @@ namespace Restaurante.Services.Validators
     {
         public ConsultaDisponibilidadValidator()
         {
-            // Debe consultar para al menos una persona.
+            // Debe consultar para al menos una persona
             RuleFor(x => x.CantidadPersonas)
                 .GreaterThan(0)
                 .WithMessage("La cantidad de personas debe ser mayor que cero.");
 
-            // Inicio obligatorio y no pasado, en horario de Bolivia.
+            // Inicio obligatorio y no pasado
             RuleFor(x => x.FechaHoraInicio)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
@@ -22,7 +22,7 @@ namespace Restaurante.Services.Validators
                 .Must(inicio => inicio >= DateTime.UtcNow.AddHours(-4))
                 .WithMessage("La fecha y hora de inicio no debe estar en el pasado.");
 
-            // La finalización debe ser posterior al inicio.
+            // La finalización debe ser posterior al inicio
             RuleFor(x => x.FechaHoraFin)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()

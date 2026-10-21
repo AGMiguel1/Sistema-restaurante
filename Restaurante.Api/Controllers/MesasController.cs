@@ -19,10 +19,7 @@ namespace Restaurante.Api.Controllers
         private readonly ConsultaDisponibilidadValidator _validador;
         private readonly IMapper _mapper;
 
-        public MesasController(
-            IMesaRepository mesaRepository,
-            ConsultaDisponibilidadValidator validador,
-            IMapper mapper)
+        public MesasController(IMesaRepository mesaRepository,ConsultaDisponibilidadValidator validador,IMapper mapper)
         {
             _mesaRepository = mesaRepository;
             _validador = validador;

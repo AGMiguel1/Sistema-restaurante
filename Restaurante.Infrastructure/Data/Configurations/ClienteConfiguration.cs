@@ -8,12 +8,12 @@ namespace Restaurante.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Cliente> entity)
         {
-            // Clave primaria del cliente.
+            // Clave primaria del cliente
             entity.HasKey(e => e.Id).HasName("PRIMARY");
 
             entity.ToTable("clientes");
 
-            // Nombre y teléfono obligatorios.
+            // Nombre y teléfono obligatorios
             entity.Property(e => e.Nombre)
                 .IsRequired()
                 .HasMaxLength(150);
@@ -22,13 +22,13 @@ namespace Restaurante.Infrastructure.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(30);
 
-            // El correo es opcional.
+            // El correo es opcional
             entity.Property(e => e.Correo)
                 .IsRequired(false)
                 .HasMaxLength(150);
 
-            // Un cliente puede tener varias reservas.
-            // Impide eliminar un cliente que tenga reservas.
+            // Un cliente puede tener varias reservas
+            // Impide eliminar un cliente que tenga reservas
             entity.HasMany(e => e.Reservas)
                 .WithOne(e => e.Cliente)
                 .HasForeignKey(e => e.ClienteId)

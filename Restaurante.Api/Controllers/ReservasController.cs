@@ -37,7 +37,7 @@ namespace Restaurante.Api.Controllers
             [FromBody] CrearReservaDto dto,
             CancellationToken cancellationToken)
         {
-            // Verifica los datos recibidos.
+            // Verifica los datos recibidos
             var validacion = await _validador.ValidateAsync(
                 dto, cancellationToken);
 
@@ -56,29 +56,28 @@ namespace Restaurante.Api.Controllers
             try
             {
                 // Registra la reserva y protege la mesa
-                // contra reservas simultáneas.
+                // contra reservas simultáneas
                 reserva = await _reservaRepository
                     .RegistrarReservaConBloqueoAsync(
                         dto, cancellationToken);
             }
             catch (KeyNotFoundException error)
             {
-                // La mesa no existe.
+                // La mesa no existe
                 return NotFound(
                     new ApiResponse<string>(error.Message));
             }
             catch (ArgumentException error)
             {
-                // La mesa está inactiva o tiene capacidad insuficiente.
+                // La mesa está inactiva o tiene capacidad insuficiente
                 return BadRequest(
                     new ApiResponse<string>(error.Message));
             }
             catch (InvalidOperationException error)
                 when (error.Data.Contains("ConflictoReserva"))
             {
-                // La mesa ya tiene una reserva en ese horario.
-                return Conflict(
-                    new ApiResponse<string>(error.Message));
+                // La mesa ya tiene una reserva en ese horario
+                return Conflict(new ApiResponse<string>(error.Message));
             }
 
             // Convierte la reserva al DTO de confirmación.

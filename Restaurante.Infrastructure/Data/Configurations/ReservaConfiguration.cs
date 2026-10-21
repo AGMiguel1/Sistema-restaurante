@@ -8,12 +8,12 @@ namespace Restaurante.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Reserva> entity)
         {
-            // Clave primaria de la reserva.
+            // Clave primaria de la reserva
             entity.HasKey(e => e.Id).HasName("PRIMARY");
 
             entity.ToTable("reservas");
 
-            // El código de reserva no puede repetirse.
+            // El codigo de reserva no puede repetirse
             entity.HasIndex(e => e.Codigo)
                 .IsUnique();
 
@@ -21,7 +21,7 @@ namespace Restaurante.Infrastructure.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(50);
 
-            // Inicio y fin en horario local de Bolivia.
+            // Inicio y fin 
             entity.Property(e => e.FechaHoraInicio)
                 .IsRequired()
                 .HasColumnType("datetime(6)");
@@ -30,16 +30,16 @@ namespace Restaurante.Infrastructure.Data.Configurations
                 .IsRequired()
                 .HasColumnType("datetime(6)");
 
-            // Cantidad de personas que asistirán.
+            // Cantidad de personas que asistiran
             entity.Property(e => e.CantidadPersonas)
                 .IsRequired();
 
-            // Guarda el estado como número: 1, 2 o 3.
+            // Guarda el estado como nuemro: 1, 2 o 3
             entity.Property(e => e.Estado)
                 .IsRequired()
                 .HasConversion<int>();
 
-            // Momento del registro guardado en UTC.
+            // Momento del registro guardado en tiempo del mundo
             entity.Property(e => e.FechaRegistro)
                 .IsRequired()
                 .HasColumnType("datetime(6)");

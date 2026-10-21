@@ -19,7 +19,7 @@ namespace Restaurante.Infrastructure.Repositories
             _context = context;
         }
 
-        // Consulta mesas con capacidad suficiente y horario libre.
+        // Consulta mesas con capacidad suficiente y horario libre
         public async Task<IReadOnlyList<Mesa>> ObtenerMesasDisponiblesAsync(
             DateTime inicio,
             DateTime fin,
@@ -29,10 +29,10 @@ namespace Restaurante.Infrastructure.Repositories
             var mesas = await _context.Mesas
                 .AsNoTracking()
 
-                // Verifica la capacidad de la mesa.
+                // Verifica la capacidad de la mesa
                 .Where(m => m.Capacidad >= capacidadMinima)
 
-                // Excluye mesas con reservas que se cruzan con el horario.
+                // Excluye mesas con reservas que se cruzan con el horario
                 .Where(m => !m.Reservas.Any(r =>
                     r.Estado != EstadoReserva.Cancelada &&
                     r.FechaHoraInicio < fin &&
@@ -45,7 +45,7 @@ namespace Restaurante.Infrastructure.Repositories
             return mesas;
         }
 
-        // Busca una mesa por su identificador.
+        // Busca una mesa por su identificador
         public async Task<Mesa?> ObtenerPorIdAsync(
             int id,
             CancellationToken cancellationToken = default)

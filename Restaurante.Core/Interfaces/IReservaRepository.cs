@@ -8,7 +8,7 @@ namespace Restaurante.Core.Interfaces
 {
     public interface IReservaRepository
     {
-        // Comprueba si una mesa tiene reservas en el horario solicitado.
+        // Comprueba si una mesa tiene reservas en el horario solicitado
         Task<bool> ExisteCruceHorarioAsync(
             int mesaId,
             DateTime inicio,
@@ -16,7 +16,7 @@ namespace Restaurante.Core.Interfaces
             int? excluirReservaId = null,
             CancellationToken cancellationToken = default);
 
-        // Registra el cliente y la reserva protegiendo la mesa.
+        // Registra el cliente y la reserva la mesa
         Task<Reserva> RegistrarReservaConBloqueoAsync(
             CrearReservaDto dto,
             CancellationToken cancellationToken = default);

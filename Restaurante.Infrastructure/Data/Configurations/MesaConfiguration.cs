@@ -8,23 +8,23 @@ namespace Restaurante.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Mesa> entity)
         {
-            // Clave primaria de la mesa.
+            // Clave primaria de la mesa
             entity.HasKey(e => e.Id).HasName("PRIMARY");
 
             entity.ToTable("mesas");
 
-            // El número de mesa no puede repetirse.
+            // El numero de mesa no puede repetirse
             entity.HasIndex(e => e.Numero)
                 .IsUnique();
 
             entity.Property(e => e.Numero)
                 .IsRequired();
 
-            // Cantidad máxima de personas.
+            // Cantidad max de personas
             entity.Property(e => e.Capacidad)
                 .IsRequired();
 
-            // Una mesa puede tener varias reservas.
+            // Una mesa puede tener varias reservas
             entity.HasMany(e => e.Reservas)
                 .WithOne(e => e.Mesa)
                 .HasForeignKey(e => e.MesaId)

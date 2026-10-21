@@ -13,7 +13,7 @@ public partial class Cliente
 
     public string? Correo { get; set; }
 
-    // Reservas asociadas al cliente.
+    // Reservas asociadas al cliente
     public virtual ICollection<Reserva> Reservas { get; set; }
         = new List<Reserva>();
 }
