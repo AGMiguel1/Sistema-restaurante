@@ -107,7 +107,7 @@ namespace Restaurante.Infrastructure.Repositories
                 // Crea una reserva confirmada
                 var reserva = new Reserva
                 {
-                    // Código provisional hasta obtener el Id
+                    // Código provisional hasta obtener el idd
                     Codigo = "RES-" + Guid.NewGuid().ToString("N"),
                     Cliente = cliente,
                     MesaId = mesa.Id,
