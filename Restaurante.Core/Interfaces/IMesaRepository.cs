@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Restaurante.Core.Interfaces
 {
-    public interface IMesaRepository
+    public interface IMesaRepository : IBaseRepository<Mesa>
     {
         // Consulta mesas activas con capacidad suficiente
         // y sin reservas que se crucen con el horario solicitado.
@@ -17,7 +17,6 @@ namespace Restaurante.Core.Interfaces
             CancellationToken cancellationToken = default);
 
         // Busca una mesa por su identificador.
-        // Devuelve null si no existe.
         Task<Mesa?> ObtenerPorIdAsync(
             int id,
             CancellationToken cancellationToken = default);

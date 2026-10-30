@@ -2,10 +2,10 @@ using System.Collections.Generic;
 
 namespace Restaurante.Core.Entities;
 
-public partial class Mesa
+public partial class Mesa : BaseEntity
 {
     // Identificador único de la mesa.
-    public int Id { get; set; }
+    //public int Id { get; set; }
 
     // Número de la mesa en el restaurante.
     public int Numero { get; set; }

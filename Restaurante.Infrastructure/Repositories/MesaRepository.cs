@@ -10,13 +10,10 @@ using System.Threading.Tasks;
 
 namespace Restaurante.Infrastructure.Repositories
 {
-    public class MesaRepository : IMesaRepository
+    public class MesaRepository : BaseRepository<Mesa>, IMesaRepository
     {
-        private readonly RestauranteContext _context;
-
-        public MesaRepository(RestauranteContext context)
+        public MesaRepository(RestauranteContext context) : base(context)
         {
-            _context = context;
         }
 
         // Consulta mesas con capacidad suficiente y horario libre.
@@ -26,18 +23,16 @@ namespace Restaurante.Infrastructure.Repositories
             int capacidadMinima,
             CancellationToken cancellationToken = default)
         {
-            var mesas = await _context.Mesas
+            var mesas = await _entities
                 .AsNoTracking()
-
                 // Verifica la capacidad de la mesa.
                 .Where(m => m.Capacidad >= capacidadMinima)
-
-                // Excluye mesas con reservas que se cruzan con el horario.
+                // Excluye mesas con reservas confirmadas o completadas que se cruzan.
                 .Where(m => !m.Reservas.Any(r =>
                     r.Estado != EstadoReserva.Cancelada &&
+                    r.Estado != EstadoReserva.NoAsistio &&
                     r.FechaHoraInicio < fin &&
                     r.FechaHoraFin > inicio))
-
                 .OrderBy(m => m.Capacidad)
                 .ThenBy(m => m.Numero)
                 .ToListAsync(cancellationToken);
@@ -50,12 +45,10 @@ namespace Restaurante.Infrastructure.Repositories
             int id,
             CancellationToken cancellationToken = default)
         {
-            var mesa = await _context.Mesas
+            return await _entities
                 .FirstOrDefaultAsync(
                     m => m.Id == id,
                     cancellationToken);
-
-            return mesa;
         }
     }
 }

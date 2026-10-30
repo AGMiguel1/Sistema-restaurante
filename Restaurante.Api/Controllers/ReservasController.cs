@@ -1,13 +1,12 @@
-using AutoMapper;
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Restaurante.Api.Response;
 using Restaurante.Core.DTOs;
 using Restaurante.Core.Entities;
-using Restaurante.Core.Interfaces;
+using Restaurante.Services.Interfaces;
 using Restaurante.Services.Validators;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,77 +16,107 @@ namespace Restaurante.Api.Controllers
     [ApiController]
     public class ReservasController : ControllerBase
     {
-        private readonly IReservaRepository _reservaRepository;
-        private readonly CrearReservaValidator _validador;
-        private readonly IMapper _mapper;
+        private readonly IReservaService _reservaService;
+        private readonly CrearReservaValidator _crearValidator;
+        private readonly ModificarReservaValidator _modificarValidator;
+        private readonly CancelarReservaValidator _cancelarValidator;
 
         public ReservasController(
-            IReservaRepository reservaRepository,
-            CrearReservaValidator validador,
-            IMapper mapper)
+            IReservaService reservaService,
+            CrearReservaValidator crearValidator,
+            ModificarReservaValidator modificarValidator,
+            CancelarReservaValidator cancelarValidator)
         {
-            _reservaRepository = reservaRepository;
-            _validador = validador;
-            _mapper = mapper;
+            _reservaService = reservaService;
+            _crearValidator = crearValidator;
+            _modificarValidator = modificarValidator;
+            _cancelarValidator = cancelarValidator;
         }
 
-        // POST: api/reservas
+        // POST: api/reservas (CU-03: Registrar Reserva)
         [HttpPost]
         public async Task<IActionResult> RegistrarReserva(
             [FromBody] CrearReservaDto dto,
             CancellationToken cancellationToken)
         {
-            // Verifica los datos recibidos.
-            var validacion = await _validador.ValidateAsync(
-                dto, cancellationToken);
-
+            var validacion = await _crearValidator.ValidateAsync(dto, cancellationToken);
             if (!validacion.IsValid)
             {
-                var errores = validacion.Errors
-                    .Select(e => e.ErrorMessage)
-                    .ToList();
-
-                return BadRequest(
-                    new ApiResponse<List<string>>(errores));
+                throw new ValidationException(validacion.Errors);
             }
 
-            Reserva reserva;
+            var reserva = await _reservaService.RegistrarReservaAsync(dto, cancellationToken);
 
-            try
+            return StatusCode(201, new ApiResponse<ReservaDetalleDto>(reserva));
+        }
+
+        // PUT: api/reservas/{codigo} (CU-04: Modificar Reserva)
+        [HttpPut("{codigo}")]
+        public async Task<IActionResult> ModificarReserva(
+            string codigo,
+            [FromBody] ModificarReservaDto dto,
+            CancellationToken cancellationToken)
+        {
+            var validacion = await _modificarValidator.ValidateAsync(dto, cancellationToken);
+            if (!validacion.IsValid)
             {
-                // Registra la reserva y protege la mesa
-                // contra reservas simultáneas.
-                reserva = await _reservaRepository
-                    .RegistrarReservaConBloqueoAsync(
-                        dto, cancellationToken);
-            }
-            catch (KeyNotFoundException error)
-            {
-                // La mesa no existe.
-                return NotFound(
-                    new ApiResponse<string>(error.Message));
-            }
-            catch (ArgumentException error)
-            {
-                // La mesa está inactiva o tiene capacidad insuficiente.
-                return BadRequest(
-                    new ApiResponse<string>(error.Message));
-            }
-            catch (InvalidOperationException error)
-                when (error.Data.Contains("ConflictoReserva"))
-            {
-                // La mesa ya tiene una reserva en ese horario.
-                return Conflict(
-                    new ApiResponse<string>(error.Message));
+                throw new ValidationException(validacion.Errors);
             }
 
-            // Convierte la reserva al DTO de confirmación.
-            var reservaDto = _mapper.Map<ReservaDetalleDto>(reserva);
+            var reserva = await _reservaService.ModificarReservaAsync(codigo, dto, cancellationToken);
 
-            // Devuelve HTTP 201 con la reserva registrada.
-            return StatusCode(
-                201,
-                new ApiResponse<ReservaDetalleDto>(reservaDto));
+            return Ok(new ApiResponse<ReservaDetalleDto>(reserva));
+        }
+
+        // GET: api/reservas/{codigo} (CU-05: Buscar Reserva por Código)
+        [HttpGet("{codigo}")]
+        public async Task<IActionResult> ObtenerPorCodigo(
+            string codigo,
+            CancellationToken cancellationToken)
+        {
+            var reserva = await _reservaService.ObtenerPorCodigoAsync(codigo, cancellationToken);
+            return Ok(new ApiResponse<ReservaDetalleDto>(reserva));
+        }
+
+        // GET: api/reservas (CU-05: Consultar Reservas con Filtros)
+        [HttpGet]
+        public async Task<IActionResult> ConsultarReservas(
+            [FromQuery] DateTime? fecha,
+            [FromQuery] EstadoReserva? estado,
+            [FromQuery] string? telefono,
+            CancellationToken cancellationToken)
+        {
+            var reservas = await _reservaService
+                .ConsultarReservasAsync(fecha, estado, telefono, cancellationToken);
+
+            return Ok(new ApiResponse<IEnumerable<ReservaDetalleDto>>(reservas));
+        }
+
+        // POST: api/reservas/{codigo}/cancelar (Cancelación Anticipada con Reembolso)
+        [HttpPost("{codigo}/cancelar")]
+        public async Task<IActionResult> CancelarReserva(
+            string codigo,
+            [FromBody] CancelarReservaDto dto,
+            CancellationToken cancellationToken)
+        {
+            var validacion = await _cancelarValidator.ValidateAsync(dto, cancellationToken);
+            if (!validacion.IsValid)
+            {
+                throw new ValidationException(validacion.Errors);
+            }
+
+            var resultado = await _reservaService.CancelarReservaAsync(codigo, dto, cancellationToken);
+            return Ok(new ApiResponse<ResultadoCancelacionDto>(resultado));
+        }
+
+        // POST: api/reservas/{codigo}/inasistencia (Registro de Inasistencia y Sanción)
+        [HttpPost("{codigo}/inasistencia")]
+        public async Task<IActionResult> RegistrarInasistencia(
+            string codigo,
+            CancellationToken cancellationToken)
+        {
+            var reserva = await _reservaService.RegistrarInasistenciaAsync(codigo, cancellationToken);
+            return Ok(new ApiResponse<ReservaDetalleDto>(reserva));
         }
     }
 }

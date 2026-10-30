@@ -8,12 +8,9 @@ namespace Restaurante.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Reserva> entity)
         {
-            // Clave primaria de la reserva.
             entity.HasKey(e => e.Id).HasName("PRIMARY");
-
             entity.ToTable("reservas");
 
-            // El código de reserva no puede repetirse.
             entity.HasIndex(e => e.Codigo)
                 .IsUnique();
 
@@ -21,7 +18,6 @@ namespace Restaurante.Infrastructure.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(50);
 
-            // Inicio y fin en horario local de Bolivia.
             entity.Property(e => e.FechaHoraInicio)
                 .IsRequired()
                 .HasColumnType("datetime(6)");
@@ -30,21 +26,17 @@ namespace Restaurante.Infrastructure.Data.Configurations
                 .IsRequired()
                 .HasColumnType("datetime(6)");
 
-            // Cantidad de personas que asistirán.
             entity.Property(e => e.CantidadPersonas)
                 .IsRequired();
 
-            // Guarda el estado como número: 1, 2 o 3.
             entity.Property(e => e.Estado)
                 .IsRequired()
                 .HasConversion<int>();
 
-            // Momento del registro guardado en UTC.
             entity.Property(e => e.FechaRegistro)
                 .IsRequired()
                 .HasColumnType("datetime(6)");
 
-            // Índice para las consultas de disponibilidad.
             entity.HasIndex(e => new
             {
                 e.MesaId,
@@ -53,16 +45,24 @@ namespace Restaurante.Infrastructure.Data.Configurations
                 e.FechaHoraFin
             });
 
-            // Relación de la reserva con el cliente.
             entity.HasOne(e => e.Cliente)
                 .WithMany(e => e.Reservas)
                 .HasForeignKey(e => e.ClienteId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Relación de la reserva con la mesa.
             entity.HasOne(e => e.Mesa)
                 .WithMany(e => e.Reservas)
                 .HasForeignKey(e => e.MesaId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Cancelacion)
+                .WithOne(e => e.Reserva)
+                .HasForeignKey<Cancelacion>(e => e.ReservaId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasMany(e => e.Sanciones)
+                .WithOne(e => e.Reserva)
+                .HasForeignKey(e => e.ReservaId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

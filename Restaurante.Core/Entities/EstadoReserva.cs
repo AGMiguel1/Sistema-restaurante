@@ -9,5 +9,7 @@ public enum EstadoReserva
     /// La reserva fue cancelada. No bloquea la disponibilidad de la mesa.
     Cancelada = 2,
     /// El cliente asistió y completó su estancia en el restaurante.
-    Completada = 3
+    Completada = 3,
+    /// El cliente no se presentó. Genera una sanción.
+    NoAsistio = 4
 }

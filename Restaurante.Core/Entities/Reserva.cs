@@ -1,11 +1,12 @@
 using System;
+using System.Collections.Generic;
 
 namespace Restaurante.Core.Entities;
 
-public partial class Reserva
+public partial class Reserva : BaseEntity 
 {
     // Identificador único de la reserva.
-    public int Id { get; set; }
+    //public int Id { get; set; }
 
     // Código único para identificar la reserva.
     public string Codigo { get; set; } = null!;
@@ -37,4 +38,11 @@ public partial class Reserva
 
     // Relación con la mesa asignada a la reserva.
     public virtual Mesa Mesa { get; set; } = null!;
+
+    // Registro de cancelación en caso de que se cancele.
+    public virtual Cancelacion? Cancelacion { get; set; }
+
+    // Sanciones asociadas a esta reserva.
+    public virtual ICollection<Sancion> Sanciones { get; set; }
+        = new List<Sancion>();
 }

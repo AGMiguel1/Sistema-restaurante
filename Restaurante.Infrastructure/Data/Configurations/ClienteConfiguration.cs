@@ -8,12 +8,13 @@ namespace Restaurante.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Cliente> entity)
         {
-            // Clave primaria del cliente.
             entity.HasKey(e => e.Id).HasName("PRIMARY");
-
             entity.ToTable("clientes");
 
-            // Nombre y teléfono obligatorios.
+            entity.HasIndex(e => e.Telefono)
+                .IsUnique()
+                .HasDatabaseName("UQ_Clientes_Telefono");
+
             entity.Property(e => e.Nombre)
                 .IsRequired()
                 .HasMaxLength(150);
@@ -22,14 +23,30 @@ namespace Restaurante.Infrastructure.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(30);
 
-            // El correo es opcional.
             entity.Property(e => e.Correo)
                 .IsRequired(false)
                 .HasMaxLength(150);
 
-            // Un cliente puede tener varias reservas.
-            // Impide eliminar un cliente que tenga reservas.
+            entity.Property(e => e.ContadorSanciones)
+                .IsRequired()
+                .HasDefaultValue(0);
+
+            entity.Property(e => e.Bloqueado)
+                .IsRequired()
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.FechaBloqueo)
+                .HasColumnType("datetime(6)");
+
+            entity.Property(e => e.BloqueadoHasta)
+                .HasColumnType("datetime(6)");
+
             entity.HasMany(e => e.Reservas)
+                .WithOne(e => e.Cliente)
+                .HasForeignKey(e => e.ClienteId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasMany(e => e.Sanciones)
                 .WithOne(e => e.Cliente)
                 .HasForeignKey(e => e.ClienteId)
                 .OnDelete(DeleteBehavior.Restrict);

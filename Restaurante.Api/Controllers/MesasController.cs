@@ -1,11 +1,10 @@
-using AutoMapper;
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Restaurante.Api.Response;
 using Restaurante.Core.DTOs;
-using Restaurante.Core.Interfaces;
+using Restaurante.Services.Interfaces;
 using Restaurante.Services.Validators;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,55 +14,33 @@ namespace Restaurante.Api.Controllers
     [ApiController]
     public class MesasController : ControllerBase
     {
-        private readonly IMesaRepository _mesaRepository;
+        private readonly IMesaService _mesaService;
         private readonly ConsultaDisponibilidadValidator _validador;
-        private readonly IMapper _mapper;
 
         public MesasController(
-            IMesaRepository mesaRepository,
-            ConsultaDisponibilidadValidator validador,
-            IMapper mapper)
+            IMesaService mesaService,
+            ConsultaDisponibilidadValidator validador)
         {
-            _mesaRepository = mesaRepository;
+            _mesaService = mesaService;
             _validador = validador;
-            _mapper = mapper;
         }
 
-        // GET: api/mesas/disponibles
+        // GET: api/mesas/disponibles (CU-02: Consultar Disponibilidad de Mesas)
         [HttpGet("disponibles")]
         public async Task<IActionResult> ConsultarDisponibilidad(
             [FromQuery] ConsultaDisponibilidadDto consulta,
             CancellationToken cancellationToken)
         {
-            // Verifica las fechas y la cantidad de personas.
-            var validacion = await _validador.ValidateAsync(
-                consulta, cancellationToken);
-
+            var validacion = await _validador.ValidateAsync(consulta, cancellationToken);
             if (!validacion.IsValid)
             {
-                var errores = validacion.Errors
-                    .Select(e => e.ErrorMessage)
-                    .ToList();
-
-                return BadRequest(
-                    new ApiResponse<List<string>>(errores));
+                throw new ValidationException(validacion.Errors);
             }
 
-            // Consulta las mesas disponibles en la base de datos.
-            var mesas = await _mesaRepository
-                .ObtenerMesasDisponiblesAsync(
-                    consulta.FechaHoraInicio,
-                    consulta.FechaHoraFin,
-                    consulta.CantidadPersonas,
-                    cancellationToken);
+            var mesas = await _mesaService
+                .ConsultarDisponibilidadAsync(consulta, cancellationToken);
 
-            // Convierte las entidades Mesa a sus DTO.
-            var mesasDto = _mapper
-                .Map<IEnumerable<MesaDisponibleDto>>(mesas);
-
-            // Devuelve las mesas; si no hay, devuelve una lista vacía.
-            return Ok(
-                new ApiResponse<IEnumerable<MesaDisponibleDto>>(mesasDto));
+            return Ok(new ApiResponse<IEnumerable<MesaDisponibleDto>>(mesas));
         }
     }
 }
