@@ -1,0 +1,51 @@
+@Restaurante.Api_HostAddress = http://localhost:5181
+
+### 1. Obtener todas las mesas
+GET {{Restaurante.Api_HostAddress}}/api/mesas
+Accept: application/json
+
+### 2. Consultar disponibilidad de mesas
+GET {{Restaurante.Api_HostAddress}}/api/mesas/disponibles?fechaHoraInicio=2026-11-01T19:00:00&fechaHoraFin=2026-11-01T21:00:00&cantidadPersonas=4
+Accept: application/json
+
+### 3. Crear una nueva reserva
+POST {{Restaurante.Api_HostAddress}}/api/reservas
+Content-Type: application/json
+
+{
+  "mesaId": 1,
+  "nombreCliente": "Carlos Mendoza",
+  "telefonoCliente": "71122334",
+  "correoCliente": "carlos@example.com",
+  "fechaHoraInicio": "2026-11-01T19:00:00",
+  "fechaHoraFin": "2026-11-01T21:00:00",
+  "cantidadPersonas": 4
+}
+
+### 4. Obtener todas las reservas
+GET {{Restaurante.Api_HostAddress}}/api/reservas
+Accept: application/json
+
+### 5. Obtener reserva por Id
+GET {{Restaurante.Api_HostAddress}}/api/reservas/1
+Accept: application/json
+
+### 6. Cancelar una reserva (sanción: 1 día de bloqueo)
+POST {{Restaurante.Api_HostAddress}}/api/reservas/1/cancelar
+Content-Type: application/json
+
+{
+  "descripcion": "Cancelación por motivos de viaje"
+}
+
+### 7. Completar una reserva
+POST {{Restaurante.Api_HostAddress}}/api/reservas/2/completar
+Content-Type: application/json
+
+### 8. Registrar inasistencia de una reserva (sanción: 7 días de bloqueo)
+POST {{Restaurante.Api_HostAddress}}/api/reservas/3/inasistencia
+Content-Type: application/json
+
+{
+  "descripcion": "El cliente no se presentó"
+}

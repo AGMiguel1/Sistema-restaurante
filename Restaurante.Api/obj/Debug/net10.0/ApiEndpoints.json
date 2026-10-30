@@ -1,0 +1,233 @@
+[
+  {
+    "ContainingType": "Restaurante.Api.Controllers.MesasController",
+    "Method": "GetAll",
+    "RelativePath": "api/Mesas",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Restaurante.Api.Controllers.MesasController",
+    "Method": "GetById",
+    "RelativePath": "api/Mesas/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Restaurante.Api.Controllers.MesasController",
+    "Method": "ConsultarDisponibilidad",
+    "RelativePath": "api/Mesas/disponibles",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "FechaHoraInicio",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      },
+      {
+        "Name": "FechaHoraFin",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      },
+      {
+        "Name": "CantidadPersonas",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Restaurante.Api.Controllers.ReservasController",
+    "Method": "GetAll",
+    "RelativePath": "api/Reservas",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Restaurante.Api.Controllers.ReservasController",
+    "Method": "RegistrarReserva",
+    "RelativePath": "api/Reservas",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "Restaurante.Core.DTOs.CrearReservaDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Restaurante.Api.Controllers.ReservasController",
+    "Method": "GetById",
+    "RelativePath": "api/Reservas/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Restaurante.Api.Controllers.ReservasController",
+    "Method": "CancelarReserva",
+    "RelativePath": "api/Reservas/{id}/cancelar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "dto",
+        "Type": "Restaurante.Core.DTOs.CambiarEstadoReservaDto",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Restaurante.Api.Controllers.ReservasController",
+    "Method": "CancelarReserva",
+    "RelativePath": "api/Reservas/{id}/cancelar",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "dto",
+        "Type": "Restaurante.Core.DTOs.CambiarEstadoReservaDto",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Restaurante.Api.Controllers.ReservasController",
+    "Method": "CompletarReserva",
+    "RelativePath": "api/Reservas/{id}/completar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Restaurante.Api.Controllers.ReservasController",
+    "Method": "CompletarReserva",
+    "RelativePath": "api/Reservas/{id}/completar",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Restaurante.Api.Controllers.ReservasController",
+    "Method": "RegistrarInasistencia",
+    "RelativePath": "api/Reservas/{id}/inasistencia",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "dto",
+        "Type": "Restaurante.Core.DTOs.CambiarEstadoReservaDto",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Restaurante.Api.Controllers.ReservasController",
+    "Method": "RegistrarInasistencia",
+    "RelativePath": "api/Reservas/{id}/inasistencia",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "dto",
+        "Type": "Restaurante.Core.DTOs.CambiarEstadoReservaDto",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Restaurante.Api.Controllers.ReservasController",
+    "Method": "RegistrarInasistencia",
+    "RelativePath": "api/Reservas/{id}/no-asistio",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "dto",
+        "Type": "Restaurante.Core.DTOs.CambiarEstadoReservaDto",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  }
+]

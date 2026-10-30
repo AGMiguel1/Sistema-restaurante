@@ -1,0 +1,213 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "Restaurante.Services/1.0.0": {
+        "dependencies": {
+          "FluentValidation.AspNetCore": "11.3.1",
+          "FluentValidation.DependencyInjectionExtensions": "11.12.0",
+          "Restaurante.Infrastructure": "1.0.0"
+        },
+        "runtime": {
+          "Restaurante.Services.dll": {}
+        }
+      },
+      "AutoMapper/13.0.1": {
+        "runtime": {
+          "lib/net6.0/AutoMapper.dll": {
+            "assemblyVersion": "13.0.0.0",
+            "fileVersion": "13.0.1.0"
+          }
+        }
+      },
+      "FluentValidation/11.12.0": {
+        "runtime": {
+          "lib/net8.0/FluentValidation.dll": {
+            "assemblyVersion": "11.0.0.0",
+            "fileVersion": "11.12.0.0"
+          }
+        }
+      },
+      "FluentValidation.AspNetCore/11.3.1": {
+        "dependencies": {
+          "FluentValidation": "11.12.0",
+          "FluentValidation.DependencyInjectionExtensions": "11.12.0"
+        },
+        "runtime": {
+          "lib/net6.0/FluentValidation.AspNetCore.dll": {
+            "assemblyVersion": "11.0.0.0",
+            "fileVersion": "11.3.1.0"
+          }
+        }
+      },
+      "FluentValidation.DependencyInjectionExtensions/11.12.0": {
+        "dependencies": {
+          "FluentValidation": "11.12.0"
+        },
+        "runtime": {
+          "lib/netstandard2.1/FluentValidation.DependencyInjectionExtensions.dll": {
+            "assemblyVersion": "11.0.0.0",
+            "fileVersion": "11.12.0.0"
+          }
+        }
+      },
+      "Microsoft.EntityFrameworkCore/9.0.20": {
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore.Abstractions": "9.0.20"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.EntityFrameworkCore.dll": {
+            "assemblyVersion": "9.0.20.0",
+            "fileVersion": "9.0.2026.41306"
+          }
+        }
+      },
+      "Microsoft.EntityFrameworkCore.Abstractions/9.0.20": {
+        "runtime": {
+          "lib/net8.0/Microsoft.EntityFrameworkCore.Abstractions.dll": {
+            "assemblyVersion": "9.0.20.0",
+            "fileVersion": "9.0.2026.41306"
+          }
+        }
+      },
+      "Microsoft.EntityFrameworkCore.Relational/9.0.20": {
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore": "9.0.20"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.EntityFrameworkCore.Relational.dll": {
+            "assemblyVersion": "9.0.20.0",
+            "fileVersion": "9.0.2026.41306"
+          }
+        }
+      },
+      "MySqlConnector/2.4.0": {
+        "runtime": {
+          "lib/net9.0/MySqlConnector.dll": {
+            "assemblyVersion": "2.0.0.0",
+            "fileVersion": "2.4.0.0"
+          }
+        }
+      },
+      "Pomelo.EntityFrameworkCore.MySql/9.0.0": {
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore.Relational": "9.0.20",
+          "MySqlConnector": "2.4.0"
+        },
+        "runtime": {
+          "lib/net8.0/Pomelo.EntityFrameworkCore.MySql.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.0.0"
+          }
+        }
+      },
+      "Restaurante.Core/1.0.0": {
+        "runtime": {
+          "Restaurante.Core.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "Restaurante.Infrastructure/1.0.0": {
+        "dependencies": {
+          "AutoMapper": "13.0.1",
+          "Microsoft.EntityFrameworkCore": "9.0.20",
+          "Microsoft.EntityFrameworkCore.Relational": "9.0.20",
+          "Pomelo.EntityFrameworkCore.MySql": "9.0.0",
+          "Restaurante.Core": "1.0.0"
+        },
+        "runtime": {
+          "Restaurante.Infrastructure.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Restaurante.Services/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "AutoMapper/13.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-/Fx1SbJ16qS7dU4i604Sle+U9VLX+WSNVJggk6MupKVkYvvBm4XqYaeFuf67diHefHKHs50uQIS2YEDFhPCakQ==",
+      "path": "automapper/13.0.1",
+      "hashPath": "automapper.13.0.1.nupkg.sha512"
+    },
+    "FluentValidation/11.12.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Wim3rI1nGZKO5S/lgJ0ZpD3W/uu1CECoJ8pETzC8av34ejr+jCDr4paKhSJRG0Ltcv8UjdxtYCynG+RUEfEUDA==",
+      "path": "fluentvalidation/11.12.0",
+      "hashPath": "fluentvalidation.11.12.0.nupkg.sha512"
+    },
+    "FluentValidation.AspNetCore/11.3.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-FjkfrGGwC+25oH8QpX1ti3gxkFjDDtotkAQWyQz2CkwQwEfRKTANjhh77I79kY8dov2ydK1SY+e4jiOWsbbDdQ==",
+      "path": "fluentvalidation.aspnetcore/11.3.1",
+      "hashPath": "fluentvalidation.aspnetcore.11.3.1.nupkg.sha512"
+    },
+    "FluentValidation.DependencyInjectionExtensions/11.12.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-lS+nClm9NEROCD5ITprZq9bVZEAoTyUb42xbm8Z80pHdRPdExISaypEZiLIJWDLfq2/j64sZgUcmgm7hjrZS+Q==",
+      "path": "fluentvalidation.dependencyinjectionextensions/11.12.0",
+      "hashPath": "fluentvalidation.dependencyinjectionextensions.11.12.0.nupkg.sha512"
+    },
+    "Microsoft.EntityFrameworkCore/9.0.20": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-52/3+48fTVcVQopie1SZLLenAuyrG0Enr1eAEbw05b22dl6nbC8V0UHLFknodJOrVcqdYR1Pf6FMbNvvWuhB5A==",
+      "path": "microsoft.entityframeworkcore/9.0.20",
+      "hashPath": "microsoft.entityframeworkcore.9.0.20.nupkg.sha512"
+    },
+    "Microsoft.EntityFrameworkCore.Abstractions/9.0.20": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ity/Y3MG2hAxK/na+9vp0XQ6kDDwZ8thJfCl+MSBhRNyXgaBtb16SyX2W0uFL44k6BHDmohybJQSRXnjkI4jtA==",
+      "path": "microsoft.entityframeworkcore.abstractions/9.0.20",
+      "hashPath": "microsoft.entityframeworkcore.abstractions.9.0.20.nupkg.sha512"
+    },
+    "Microsoft.EntityFrameworkCore.Relational/9.0.20": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-84oLYJjAA8hSrwPfkq0cm9dBdf3uFbBwqJVYjmS4zEoKJ87cj/Knyp1iYAHe95ToJHeo8APAPG0OlA6S4GUUlw==",
+      "path": "microsoft.entityframeworkcore.relational/9.0.20",
+      "hashPath": "microsoft.entityframeworkcore.relational.9.0.20.nupkg.sha512"
+    },
+    "MySqlConnector/2.4.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-78M+gVOjbdZEDIyXQqcA7EYlCGS3tpbUELHvn6638A2w0pkPI625ixnzsa5staAd3N9/xFmPJtkKDYwsXpFi/w==",
+      "path": "mysqlconnector/2.4.0",
+      "hashPath": "mysqlconnector.2.4.0.nupkg.sha512"
+    },
+    "Pomelo.EntityFrameworkCore.MySql/9.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-cl7S4s6CbJno0LjNxrBHNc2xxmCliR5i40ATPZk/eTywVaAbHCbdc9vbGc3QThvwGjHqrDHT8vY9m1VF/47o0g==",
+      "path": "pomelo.entityframeworkcore.mysql/9.0.0",
+      "hashPath": "pomelo.entityframeworkcore.mysql.9.0.0.nupkg.sha512"
+    },
+    "Restaurante.Core/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Restaurante.Infrastructure/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
