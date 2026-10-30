@@ -6,9 +6,4 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="Interfaces\ICancelacionRepository.cs" />
-    <Compile Remove="Interfaces\ISancionRepository.cs" />
-  </ItemGroup>
-
 </Project>
