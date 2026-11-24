@@ -49,6 +49,7 @@ namespace Restaurante.Api
 
             // 4. Registrar la capa de servicios (Lógica de Negocio).
             builder.Services.AddScoped<IMesaService, MesaService>();
+            builder.Services.AddScoped<IClienteService, ClienteService>();
             builder.Services.AddScoped<IReservaService, ReservaService>();
 
             // 5. Configurar controladores suprimiendo el filtro automático para que el middleware maneje validaciones.
@@ -65,6 +66,8 @@ namespace Restaurante.Api
 
             // 8. Validadores de FluentValidation.
             builder.Services.AddScoped<ConsultaDisponibilidadValidator>();
+            builder.Services.AddScoped<GuardarMesaValidator>();
+            builder.Services.AddScoped<GuardarClienteValidator>();
             builder.Services.AddScoped<CrearReservaValidator>();
             builder.Services.AddScoped<ModificarReservaValidator>();
             builder.Services.AddScoped<CancelarReservaValidator>();

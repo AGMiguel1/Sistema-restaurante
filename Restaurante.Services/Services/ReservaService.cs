@@ -18,28 +18,37 @@ namespace Restaurante.Services.Services
     public class ReservaService : IReservaService
     {
         private readonly IReservaRepository _reservaRepository;
-        private readonly IMesaRepository _mesaRepository;
+        private readonly IBaseRepository<Mesa> _mesaRepository;
         private readonly IClienteRepository _clienteRepository;
-        private readonly ICancelacionRepository _cancelacionRepository;
         private readonly ISancionRepository _sancionRepository;
         private readonly RestauranteContext _context;
+        private readonly IBaseRepository<Reserva> _reservaBaseRepository;
+        private readonly IBaseRepository<Cliente> _clienteBaseRepository;
+        private readonly IBaseRepository<Cancelacion> _cancelacionBaseRepository;
+        private readonly IBaseRepository<Sancion> _sancionBaseRepository;
         private readonly IMapper _mapper;
 
         public ReservaService(
             IReservaRepository reservaRepository,
-            IMesaRepository mesaRepository,
+            IBaseRepository<Mesa> mesaRepository,
             IClienteRepository clienteRepository,
-            ICancelacionRepository cancelacionRepository,
             ISancionRepository sancionRepository,
             RestauranteContext context,
+            IBaseRepository<Reserva> reservaBaseRepository,
+            IBaseRepository<Cliente> clienteBaseRepository,
+            IBaseRepository<Cancelacion> cancelacionBaseRepository,
+            IBaseRepository<Sancion> sancionBaseRepository,
             IMapper mapper)
         {
             _reservaRepository = reservaRepository;
             _mesaRepository = mesaRepository;
             _clienteRepository = clienteRepository;
-            _cancelacionRepository = cancelacionRepository;
             _sancionRepository = sancionRepository;
             _context = context;
+            _reservaBaseRepository = reservaBaseRepository;
+            _clienteBaseRepository = clienteBaseRepository;
+            _cancelacionBaseRepository = cancelacionBaseRepository;
+            _sancionBaseRepository = sancionBaseRepository;
             _mapper = mapper;
         }
 
@@ -103,7 +112,7 @@ namespace Restaurante.Services.Services
                     HttpStatusCode.BadRequest);
             }
 
-            var mesa = await _mesaRepository.ObtenerPorIdAsync(dto.MesaId, cancellationToken);
+            var mesa = await _mesaRepository.GetById(dto.MesaId);
             if (mesa == null)
             {
                 throw new BusinessException("La mesa seleccionada no existe.", HttpStatusCode.NotFound);
@@ -133,7 +142,7 @@ namespace Restaurante.Services.Services
             reserva.FechaHoraFin = dto.FechaHoraFin;
             reserva.CantidadPersonas = dto.CantidadPersonas;
 
-            await _reservaRepository.Update(reserva);
+            await _reservaBaseRepository.Update(reserva);
 
             return _mapper.Map<ReservaDetalleDto>(reserva);
         }
@@ -163,6 +172,27 @@ namespace Restaurante.Services.Services
                 .ConsultarReservasAsync(fecha, estado, telefono, cancellationToken);
 
             return _mapper.Map<IEnumerable<ReservaDetalleDto>>(reservas);
+        }
+
+        public async Task EliminarReservaAsync(
+            string codigo,
+            CancellationToken cancellationToken = default)
+        {
+            var reserva = await _reservaRepository.ObtenerPorCodigoAsync(codigo, cancellationToken);
+            if (reserva == null)
+            {
+                throw new BusinessException($"No se encontró la reserva con código {codigo}.", HttpStatusCode.NotFound);
+            }
+
+            if (await _context.Cancelaciones.AnyAsync(c => c.ReservaId == reserva.Id, cancellationToken) ||
+                await _context.Sanciones.AnyAsync(s => s.ReservaId == reserva.Id, cancellationToken))
+            {
+                throw new BusinessException(
+                    "No se puede eliminar una reserva con cancelaciones o sanciones asociadas.",
+                    HttpStatusCode.Conflict);
+            }
+
+            await _reservaBaseRepository.Delete(reserva.Id);
         }
 
         // Cancelación anticipada y cálculo de reembolso.
@@ -224,10 +254,10 @@ namespace Restaurante.Services.Services
                 Motivo = dto.Motivo?.Trim()
             };
 
-            await _cancelacionRepository.Add(cancelacion);
+            await _cancelacionBaseRepository.Add(cancelacion);
 
             reserva.Estado = EstadoReserva.Cancelada;
-            await _reservaRepository.Update(reserva);
+            await _reservaBaseRepository.Update(reserva);
 
             return new ResultadoCancelacionDto
             {
@@ -304,9 +334,9 @@ namespace Restaurante.Services.Services
                 FechaFin = cliente.BloqueadoHasta
             };
 
-            await _sancionRepository.Add(sancion);
-            await _clienteRepository.Update(cliente);
-            await _reservaRepository.Update(reserva);
+            await _sancionBaseRepository.Add(sancion);
+            await _clienteBaseRepository.Update(cliente);
+            await _reservaBaseRepository.Update(reserva);
 
             return _mapper.Map<ReservaDetalleDto>(reserva);
         }
