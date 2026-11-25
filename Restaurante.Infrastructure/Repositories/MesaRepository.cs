@@ -16,6 +16,19 @@ namespace Restaurante.Infrastructure.Repositories
         {
         }
 
+        public Task<bool> ExisteNumeroAsync(int numero, int? excluirId, CancellationToken cancellationToken)
+            => _entities.AnyAsync(m => m.Numero == numero &&
+                (!excluirId.HasValue || m.Id != excluirId.Value), cancellationToken);
+
+        public Task<bool> TieneReservasAsync(int mesaId, CancellationToken cancellationToken)
+            => _context.Reservas.AnyAsync(r => r.MesaId == mesaId, cancellationToken);
+
+        public Task<bool> TieneReservaVigenteSobreCapacidadAsync(
+            int mesaId, int capacidad, DateTime ahora, CancellationToken cancellationToken)
+            => _context.Reservas.AnyAsync(r => r.MesaId == mesaId &&
+                r.Estado == EstadoReserva.Confirmada && r.FechaHoraFin > ahora &&
+                r.CantidadPersonas > capacidad, cancellationToken);
+
         // Consulta mesas con capacidad suficiente y horario libre.
         public async Task<IReadOnlyList<Mesa>> ObtenerMesasDisponiblesAsync(
             DateTime inicio,

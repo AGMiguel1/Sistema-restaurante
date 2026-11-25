@@ -29,6 +29,7 @@ namespace Restaurante.Infrastructure.Data.Configurations
 
             entity.Property(e => e.ContadorSanciones)
                 .IsRequired()
+                .IsConcurrencyToken()
                 .HasDefaultValue(0);
 
             entity.Property(e => e.Bloqueado)

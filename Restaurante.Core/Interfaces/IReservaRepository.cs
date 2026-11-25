@@ -9,6 +9,8 @@ namespace Restaurante.Core.Interfaces
 {
     public interface IReservaRepository : IBaseRepository<Reserva>
     {
+        Task<bool> TieneRegistrosAsociadosAsync(int reservaId, CancellationToken cancellationToken);
+
         // Comprueba si una mesa tiene reservas en el horario solicitado.
         Task<bool> ExisteCruceHorarioAsync(
             int mesaId,

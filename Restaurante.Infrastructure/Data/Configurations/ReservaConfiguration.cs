@@ -31,6 +31,7 @@ namespace Restaurante.Infrastructure.Data.Configurations
 
             entity.Property(e => e.Estado)
                 .IsRequired()
+                .IsConcurrencyToken()
                 .HasConversion<int>();
 
             entity.Property(e => e.FechaRegistro)
