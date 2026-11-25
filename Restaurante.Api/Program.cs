@@ -1,3 +1,6 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Restaurante.Api.Filters;
 using Restaurante.Core.Interfaces;
@@ -16,6 +19,37 @@ namespace Restaurante.Api
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            //------------------------------------------------------
+     var jwtKey = builder.Configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException("No se encontró la clave JWT.");
+
+            var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+            var jwtAudience = builder.Configuration["Jwt:Audience"];
+
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+
+                    ValidIssuer = jwtIssuer,
+                    ValidAudience = jwtAudience,
+
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(jwtKey)
+                    )
+                };
+            });
+            //-------------------
 
             // 1. Configurar conexión MySQL con Pomelo EF Core.
             var connectionString = builder.Configuration
@@ -48,11 +82,12 @@ namespace Restaurante.Api
             builder.Services.AddScoped<ICancelacionRepository, CancelacionRepository>();
             builder.Services.AddScoped<ISancionRepository, SancionRepository>();
             builder.Services.AddScoped<IConfiguracionReservaRepository, ConfiguracionReservaRepository>();
-
+            builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
             // 4. Registrar la capa de servicios (Lógica de Negocio).
             builder.Services.AddScoped<IMesaService, MesaService>();
             builder.Services.AddScoped<IClienteService, ClienteService>();
             builder.Services.AddScoped<IReservaService, ReservaService>();
+            builder.Services.AddScoped<ILoginService, LoginService>();
 
             // 5. Configurar controladores suprimiendo el filtro automático para que el middleware maneje validaciones.
             builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
@@ -85,7 +120,8 @@ namespace Restaurante.Api
             }
 
             app.UseHttpsRedirection();
-
+            
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();
