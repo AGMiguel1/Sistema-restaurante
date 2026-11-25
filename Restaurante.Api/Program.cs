@@ -37,8 +37,9 @@ namespace Restaurante.Api
             builder.Services.AddDbContext<RestauranteContext>(options =>
                 options.UseMySql(connectionString, serverVersion));
 
-            // 2. Registrar el repositorio genérico (patrón de SocialMediaStudent).
-            builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
+            // 2. Registrar la unidad de trabajo y la conexión de Dapper.
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            builder.Services.AddScoped<DapperContext>();
 
             // 3. Registrar los repositorios específicos.
             builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
@@ -46,6 +47,7 @@ namespace Restaurante.Api
             builder.Services.AddScoped<IReservaRepository, ReservaRepository>();
             builder.Services.AddScoped<ICancelacionRepository, CancelacionRepository>();
             builder.Services.AddScoped<ISancionRepository, SancionRepository>();
+            builder.Services.AddScoped<IConfiguracionReservaRepository, ConfiguracionReservaRepository>();
 
             // 4. Registrar la capa de servicios (Lógica de Negocio).
             builder.Services.AddScoped<IMesaService, MesaService>();

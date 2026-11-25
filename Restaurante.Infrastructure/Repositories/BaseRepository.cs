@@ -31,13 +31,14 @@ namespace Restaurante.Infrastructure.Repositories
         public async Task Add(T entity)
         {
             await _entities.AddAsync(entity);
-            await _context.SaveChangesAsync();
         }
 
-        public async Task Update(T entity)
+        public Task Update(T entity)
         {
-            _entities.Update(entity);
-            await _context.SaveChangesAsync();
+            if (_context.Entry(entity).State == EntityState.Detached)
+                _entities.Update(entity);
+
+            return Task.CompletedTask;
         }
 
         public async Task Delete(int id)
@@ -46,7 +47,6 @@ namespace Restaurante.Infrastructure.Repositories
             if (entity != null)
             {
                 _entities.Remove(entity);
-                await _context.SaveChangesAsync();
             }
         }
     }

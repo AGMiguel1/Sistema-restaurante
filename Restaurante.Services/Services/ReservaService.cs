@@ -1,14 +1,13 @@
 using AutoMapper;
-using Microsoft.EntityFrameworkCore;
 using Restaurante.Core.DTOs;
 using Restaurante.Core.Entities;
 using Restaurante.Core.Exceptions;
 using Restaurante.Core.Interfaces;
 using Restaurante.Infrastructure.Data;
+using Restaurante.Infrastructure.Repositories;
 using Restaurante.Services.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,16 +16,24 @@ namespace Restaurante.Services.Services
 {
     public class ReservaService : IReservaService
     {
-        private readonly IReservaRepository _reservaRepository;
-        private readonly IBaseRepository<Mesa> _mesaRepository;
-        private readonly IClienteRepository _clienteRepository;
-        private readonly ISancionRepository _sancionRepository;
-        private readonly RestauranteContext _context;
-        private readonly IBaseRepository<Reserva> _reservaBaseRepository;
-        private readonly IBaseRepository<Cliente> _clienteBaseRepository;
-        private readonly IBaseRepository<Cancelacion> _cancelacionBaseRepository;
-        private readonly IBaseRepository<Sancion> _sancionBaseRepository;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IBaseRepository<Mesa> _mesaCrud;
+        private readonly IBaseRepository<Reserva> _reservaCrud;
+        private readonly IBaseRepository<Cliente> _clienteCrud;
+        private readonly IBaseRepository<Cancelacion> _cancelacionCrud;
+        private readonly IBaseRepository<Sancion> _sancionCrud;
         private readonly IMapper _mapper;
+
+        public ReservaService(IUnitOfWork unitOfWork, IMapper mapper)
+        {
+            _unitOfWork = unitOfWork;
+            _mesaCrud = unitOfWork.Mesas;
+            _reservaCrud = unitOfWork.Reservas;
+            _clienteCrud = unitOfWork.Clientes;
+            _cancelacionCrud = unitOfWork.Cancelaciones;
+            _sancionCrud = unitOfWork.Sanciones;
+            _mapper = mapper;
+        }
 
         public ReservaService(
             IReservaRepository reservaRepository,
@@ -39,17 +46,14 @@ namespace Restaurante.Services.Services
             IBaseRepository<Cancelacion> cancelacionBaseRepository,
             IBaseRepository<Sancion> sancionBaseRepository,
             IMapper mapper)
+            : this(new UnitOfWork(context, clientes: clienteRepository, reservas: reservaRepository,
+                sanciones: sancionRepository), mapper)
         {
-            _reservaRepository = reservaRepository;
-            _mesaRepository = mesaRepository;
-            _clienteRepository = clienteRepository;
-            _sancionRepository = sancionRepository;
-            _context = context;
-            _reservaBaseRepository = reservaBaseRepository;
-            _clienteBaseRepository = clienteBaseRepository;
-            _cancelacionBaseRepository = cancelacionBaseRepository;
-            _sancionBaseRepository = sancionBaseRepository;
-            _mapper = mapper;
+            _mesaCrud = mesaRepository;
+            _reservaCrud = reservaBaseRepository;
+            _clienteCrud = clienteBaseRepository;
+            _cancelacionCrud = cancelacionBaseRepository;
+            _sancionCrud = sancionBaseRepository;
         }
 
         // CU-03: Registrar reserva con bloqueo pesimista y comprobación de cliente.
@@ -58,7 +62,7 @@ namespace Restaurante.Services.Services
             CancellationToken cancellationToken = default)
         {
             // 1. Verificar si el cliente ya existe y si está bloqueado.
-            var clienteExistente = await _clienteRepository
+            var clienteExistente = await _unitOfWork.Clientes
                 .ObtenerPorTelefonoAsync(dto.TelefonoCliente, cancellationToken);
 
             if (clienteExistente != null && clienteExistente.EstaBloqueado(DateTime.UtcNow))
@@ -74,7 +78,7 @@ namespace Restaurante.Services.Services
             Reserva reserva;
             try
             {
-                reserva = await _reservaRepository
+                reserva = await _unitOfWork.Reservas
                     .RegistrarReservaConBloqueoAsync(dto, cancellationToken);
             }
             catch (KeyNotFoundException ex)
@@ -99,7 +103,7 @@ namespace Restaurante.Services.Services
             ModificarReservaDto dto,
             CancellationToken cancellationToken = default)
         {
-            var reserva = await _reservaRepository.ObtenerPorCodigoAsync(codigo, cancellationToken);
+            var reserva = await _unitOfWork.Reservas.ObtenerPorCodigoAsync(codigo, cancellationToken);
             if (reserva == null)
             {
                 throw new BusinessException($"No existe ninguna reserva con el código {codigo}.", HttpStatusCode.NotFound);
@@ -112,7 +116,7 @@ namespace Restaurante.Services.Services
                     HttpStatusCode.BadRequest);
             }
 
-            var mesa = await _mesaRepository.GetById(dto.MesaId);
+            var mesa = await _mesaCrud.GetById(dto.MesaId);
             if (mesa == null)
             {
                 throw new BusinessException("La mesa seleccionada no existe.", HttpStatusCode.NotFound);
@@ -124,7 +128,7 @@ namespace Restaurante.Services.Services
             }
 
             // Validar que no haya cruce en el nuevo horario, excluyendo la reserva actual.
-            var hayCruce = await _reservaRepository.ExisteCruceHorarioAsync(
+            var hayCruce = await _unitOfWork.Reservas.ExisteCruceHorarioAsync(
                 dto.MesaId,
                 dto.FechaHoraInicio,
                 dto.FechaHoraFin,
@@ -142,7 +146,8 @@ namespace Restaurante.Services.Services
             reserva.FechaHoraFin = dto.FechaHoraFin;
             reserva.CantidadPersonas = dto.CantidadPersonas;
 
-            await _reservaBaseRepository.Update(reserva);
+            await _reservaCrud.Update(reserva);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return _mapper.Map<ReservaDetalleDto>(reserva);
         }
@@ -152,7 +157,7 @@ namespace Restaurante.Services.Services
             string codigo,
             CancellationToken cancellationToken = default)
         {
-            var reserva = await _reservaRepository.ObtenerPorCodigoAsync(codigo, cancellationToken);
+            var reserva = await _unitOfWork.Reservas.ObtenerPorCodigoAsync(codigo, cancellationToken);
             if (reserva == null)
             {
                 throw new BusinessException($"No se encontró la reserva con código {codigo}.", HttpStatusCode.NotFound);
@@ -168,7 +173,7 @@ namespace Restaurante.Services.Services
             string? telefono,
             CancellationToken cancellationToken = default)
         {
-            var reservas = await _reservaRepository
+            var reservas = await _unitOfWork.Reservas
                 .ConsultarReservasAsync(fecha, estado, telefono, cancellationToken);
 
             return _mapper.Map<IEnumerable<ReservaDetalleDto>>(reservas);
@@ -178,21 +183,21 @@ namespace Restaurante.Services.Services
             string codigo,
             CancellationToken cancellationToken = default)
         {
-            var reserva = await _reservaRepository.ObtenerPorCodigoAsync(codigo, cancellationToken);
+            var reserva = await _unitOfWork.Reservas.ObtenerPorCodigoAsync(codigo, cancellationToken);
             if (reserva == null)
             {
                 throw new BusinessException($"No se encontró la reserva con código {codigo}.", HttpStatusCode.NotFound);
             }
 
-            if (await _context.Cancelaciones.AnyAsync(c => c.ReservaId == reserva.Id, cancellationToken) ||
-                await _context.Sanciones.AnyAsync(s => s.ReservaId == reserva.Id, cancellationToken))
+            if (await _unitOfWork.Reservas.TieneRegistrosAsociadosAsync(reserva.Id, cancellationToken))
             {
                 throw new BusinessException(
                     "No se puede eliminar una reserva con cancelaciones o sanciones asociadas.",
                     HttpStatusCode.Conflict);
             }
 
-            await _reservaBaseRepository.Delete(reserva.Id);
+            await _reservaCrud.Delete(reserva.Id);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         // Cancelación anticipada y cálculo de reembolso.
@@ -201,7 +206,7 @@ namespace Restaurante.Services.Services
             CancelarReservaDto dto,
             CancellationToken cancellationToken = default)
         {
-            var reserva = await _reservaRepository.ObtenerPorCodigoAsync(codigo, cancellationToken);
+            var reserva = await _unitOfWork.Reservas.ObtenerPorCodigoAsync(codigo, cancellationToken);
             if (reserva == null)
             {
                 throw new BusinessException($"No se encontró la reserva con código {codigo}.", HttpStatusCode.NotFound);
@@ -222,21 +227,15 @@ namespace Restaurante.Services.Services
             if (horasAnticipacion < 0) horasAnticipacion = 0;
 
             // Consultar política de reembolso activa aplicable
-            var politicas = await _context.PoliticasReembolso
-                .AsNoTracking()
-                .Where(p => p.Activa && p.HorasMinimasAnticipacion <= horasAnticipacion)
-                .OrderByDescending(p => p.HorasMinimasAnticipacion)
-                .ToListAsync(cancellationToken);
-
-            var porcentaje = politicas.FirstOrDefault()?.PorcentajeReembolso ?? 0m;
+            var porcentaje = await _unitOfWork.ConfiguracionReservas
+                .ObtenerPorcentajeReembolsoAsync(horasAnticipacion, cancellationToken);
 
             // Obtener monto base de garantía configurable (por defecto 50 si no está configurado)
-            var configGarantia = await _context.Configuraciones
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Clave == "MontoGarantiaReserva", cancellationToken);
+            var configGarantia = await _unitOfWork.ConfiguracionReservas
+                .ObtenerValorAsync("MontoGarantiaReserva", cancellationToken);
 
             decimal montoBase = 50.00m;
-            if (configGarantia != null && decimal.TryParse(configGarantia.Valor, out var valorParsed))
+            if (decimal.TryParse(configGarantia, out var valorParsed))
             {
                 montoBase = valorParsed;
             }
@@ -254,10 +253,11 @@ namespace Restaurante.Services.Services
                 Motivo = dto.Motivo?.Trim()
             };
 
-            await _cancelacionBaseRepository.Add(cancelacion);
+            await _cancelacionCrud.Add(cancelacion);
 
             reserva.Estado = EstadoReserva.Cancelada;
-            await _reservaBaseRepository.Update(reserva);
+            await _reservaCrud.Update(reserva);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return new ResultadoCancelacionDto
             {
@@ -278,7 +278,7 @@ namespace Restaurante.Services.Services
             string codigo,
             CancellationToken cancellationToken = default)
         {
-            var reserva = await _reservaRepository.ObtenerPorCodigoAsync(codigo, cancellationToken);
+            var reserva = await _unitOfWork.Reservas.ObtenerPorCodigoAsync(codigo, cancellationToken);
             if (reserva == null)
             {
                 throw new BusinessException($"No se encontró la reserva con código {codigo}.", HttpStatusCode.NotFound);
@@ -291,7 +291,7 @@ namespace Restaurante.Services.Services
                     HttpStatusCode.BadRequest);
             }
 
-            var yaSancionada = await _sancionRepository
+            var yaSancionada = await _unitOfWork.Sanciones
                 .ExisteSancionAsync(reserva.Id, MotivoSancion.Inasistencia, cancellationToken);
 
             if (yaSancionada)
@@ -307,9 +307,8 @@ namespace Restaurante.Services.Services
             cliente.ContadorSanciones++;
 
             // Consultar escala de sanción correspondiente al número de falta
-            var escala = await _context.EscalasSancion
-                .AsNoTracking()
-                .FirstOrDefaultAsync(e => e.NumeroFalta == cliente.ContadorSanciones, cancellationToken);
+            var escala = await _unitOfWork.ConfiguracionReservas
+                .ObtenerEscalaSancionAsync(cliente.ContadorSanciones, cancellationToken);
 
             if (escala != null && escala.Bloquea)
             {
@@ -334,9 +333,10 @@ namespace Restaurante.Services.Services
                 FechaFin = cliente.BloqueadoHasta
             };
 
-            await _sancionBaseRepository.Add(sancion);
-            await _clienteBaseRepository.Update(cliente);
-            await _reservaBaseRepository.Update(reserva);
+            await _sancionCrud.Add(sancion);
+            await _clienteCrud.Update(cliente);
+            await _reservaCrud.Update(reserva);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return _mapper.Map<ReservaDetalleDto>(reserva);
         }

@@ -14,9 +14,20 @@ namespace Restaurante.Infrastructure.Repositories
 {
     public class ReservaRepository : BaseRepository<Reserva>, IReservaRepository
     {
-        public ReservaRepository(RestauranteContext context) : base(context)
+        private readonly DapperContext _dapper;
+
+        public ReservaRepository(RestauranteContext context) : this(context, new DapperContext(context))
         {
         }
+
+        public ReservaRepository(RestauranteContext context, DapperContext dapper) : base(context)
+        {
+            _dapper = dapper;
+        }
+
+        public Task<bool> TieneRegistrosAsociadosAsync(int reservaId, CancellationToken cancellationToken)
+            => _entities.AnyAsync(r => r.Id == reservaId &&
+                (r.Cancelacion != null || r.Sanciones.Any()), cancellationToken);
 
         // Comprueba si existen reservas activas que se cruzan con el horario.
         public async Task<bool> ExisteCruceHorarioAsync(
@@ -49,38 +60,44 @@ namespace Restaurante.Infrastructure.Repositories
         }
 
         // Consulta listado de reservas con filtros opcionales.
-        public async Task<IEnumerable<Reserva>> ConsultarReservasAsync(
+        public Task<IEnumerable<Reserva>> ConsultarReservasAsync(
             DateTime? fecha,
             EstadoReserva? estado,
             string? telefono,
             CancellationToken cancellationToken = default)
         {
-            var query = _entities
-                .Include(r => r.Cliente)
-                .Include(r => r.Mesa)
-                .AsNoTracking()
-                .AsQueryable();
+            const string sql = """
+                SELECT r.Id, r.Codigo, r.ClienteId, r.MesaId, r.FechaHoraInicio, r.FechaHoraFin,
+                       r.CantidadPersonas, r.Estado, r.FechaRegistro,
+                       c.Id, c.Nombre, c.Telefono, c.Correo, c.ContadorSanciones,
+                       c.Bloqueado, c.FechaBloqueo, c.BloqueadoHasta,
+                       m.Id, m.Numero, m.Capacidad
+                FROM reservas r
+                INNER JOIN clientes c ON c.Id = r.ClienteId
+                INNER JOIN mesas m ON m.Id = r.MesaId
+                WHERE (@InicioDia IS NULL OR r.FechaHoraInicio >= @InicioDia)
+                  AND (@FinDia IS NULL OR r.FechaHoraInicio < @FinDia)
+                  AND (@Estado IS NULL OR r.Estado = @Estado)
+                  AND (@Telefono IS NULL OR c.Telefono = @Telefono)
+                ORDER BY r.FechaHoraInicio DESC
+                """;
 
-            if (fecha.HasValue)
+            var inicioDia = fecha?.Date;
+            var parametros = new
             {
-                var inicioDia = fecha.Value.Date;
-                var finDia = inicioDia.AddDays(1);
-                query = query.Where(r => r.FechaHoraInicio >= inicioDia && r.FechaHoraInicio < finDia);
-            }
+                InicioDia = inicioDia,
+                FinDia = inicioDia < DateTime.MaxValue.Date ? inicioDia?.AddDays(1) : null,
+                Estado = (int?)estado,
+                Telefono = string.IsNullOrWhiteSpace(telefono) ? null : telefono.Trim()
+            };
 
-            if (estado.HasValue)
-            {
-                query = query.Where(r => r.Estado == estado.Value);
-            }
-
-            if (!string.IsNullOrWhiteSpace(telefono))
-            {
-                query = query.Where(r => r.Cliente.Telefono == telefono.Trim());
-            }
-
-            return await query
-                .OrderByDescending(r => r.FechaHoraInicio)
-                .ToListAsync(cancellationToken);
+            return _dapper.QueryAsync<Reserva, Cliente, Mesa, Reserva>(
+                sql, parametros, (reserva, cliente, mesa) =>
+                {
+                    reserva.Cliente = cliente;
+                    reserva.Mesa = mesa;
+                    return reserva;
+                }, "Id,Id", cancellationToken);
         }
 
         public async Task<Reserva> RegistrarReservaConBloqueoAsync(

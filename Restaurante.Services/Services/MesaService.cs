@@ -1,14 +1,14 @@
 using FluentValidation;
-using Microsoft.EntityFrameworkCore;
 using Restaurante.Core.Entities;
 using Restaurante.Core.Exceptions;
-using Restaurante.Infrastructure.Data;
 using Restaurante.Services.Validators;
 using System.Linq;
 using System.Net;
 using AutoMapper;
 using Restaurante.Core.DTOs;
 using Restaurante.Core.Interfaces;
+using Restaurante.Infrastructure.Data;
+using Restaurante.Infrastructure.Repositories;
 using Restaurante.Services.Interfaces;
 using System.Collections.Generic;
 using System.Threading;
@@ -18,26 +18,31 @@ namespace Restaurante.Services.Services
 {
     public class MesaService : IMesaService
     {
-        private readonly IMesaRepository _mesaRepository;
-        private readonly IBaseRepository<Mesa> _baseRepository;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IBaseRepository<Mesa> _mesaCrud;
         private readonly IMapper _mapper;
-        private readonly RestauranteContext _context;
         private readonly GuardarMesaValidator _validator;
 
-        public MesaService(IMesaRepository mesaRepository, IMapper mapper, RestauranteContext context, GuardarMesaValidator validator, IBaseRepository<Mesa> baseRepository)
+        public MesaService(IUnitOfWork unitOfWork, IMapper mapper, GuardarMesaValidator validator)
         {
-            _mesaRepository = mesaRepository;
-            _baseRepository = baseRepository;
+            _unitOfWork = unitOfWork;
+            _mesaCrud = unitOfWork.Mesas;
             _mapper = mapper;
-            _context = context;
             _validator = validator;
+        }
+
+        public MesaService(IMesaRepository mesaRepository, IMapper mapper, RestauranteContext context,
+            GuardarMesaValidator validator, IBaseRepository<Mesa> baseRepository)
+            : this(new UnitOfWork(context, mesas: mesaRepository), mapper, validator)
+        {
+            _mesaCrud = baseRepository;
         }
 
         public async Task<IEnumerable<MesaDisponibleDto>> ConsultarDisponibilidadAsync(
             ConsultaDisponibilidadDto consulta,
             CancellationToken cancellationToken = default)
         {
-            var mesas = await _mesaRepository.ObtenerMesasDisponiblesAsync(
+            var mesas = await _unitOfWork.Mesas.ObtenerMesasDisponiblesAsync(
                 consulta.FechaHoraInicio,
                 consulta.FechaHoraFin,
                 consulta.CantidadPersonas,
@@ -48,7 +53,7 @@ namespace Restaurante.Services.Services
 
         public async Task<IEnumerable<MesaDetalleDto>> ObtenerTodosAsync(CancellationToken cancellationToken = default)
         {
-            var entities = (await _baseRepository.GetAll()).OrderBy(x => x.Id);
+            var entities = (await _mesaCrud.GetAll()).OrderBy(x => x.Id);
             return entities.Select(Mapear).ToList();
         }
 
@@ -62,7 +67,8 @@ namespace Restaurante.Services.Services
             var entity = new Mesa();
             entity.Numero = dto.Numero;
             entity.Capacidad = dto.Capacidad;
-            await _baseRepository.Add(entity);
+            await _mesaCrud.Add(entity);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return Mapear(entity);
         }
 
@@ -72,33 +78,33 @@ namespace Restaurante.Services.Services
             var entity = await BuscarAsync(id, cancellationToken);
             await ValidarUnicoAsync(dto, id, cancellationToken);
 
-            if (await _context.Reservas.AnyAsync(r => r.MesaId == id &&
-                r.Estado == EstadoReserva.Confirmada && r.FechaHoraFin > DateTime.UtcNow &&
-                r.CantidadPersonas > dto.Capacidad, cancellationToken))
+            if (await _unitOfWork.Mesas.TieneReservaVigenteSobreCapacidadAsync(
+                id, dto.Capacidad, DateTime.UtcNow, cancellationToken))
                 throw new BusinessException("La capacidad no puede ser menor que la cantidad de personas de una reserva vigente.", HttpStatusCode.Conflict);
 
             entity.Numero = dto.Numero;
             entity.Capacidad = dto.Capacidad;
-            await _baseRepository.Update(entity);
+            await _mesaCrud.Update(entity);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return Mapear(entity);
         }
 
         public async Task EliminarAsync(int id, CancellationToken cancellationToken = default)
         {
             await BuscarAsync(id, cancellationToken);
-            if (await _context.Reservas.AnyAsync(r => r.MesaId == id, cancellationToken))
+            if (await _unitOfWork.Mesas.TieneReservasAsync(id, cancellationToken))
                 throw new BusinessException("No se puede eliminar: existen registros relacionados.", HttpStatusCode.Conflict);
-            await _baseRepository.Delete(id);
+            await _mesaCrud.Delete(id);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         private async Task<Mesa> BuscarAsync(int id, CancellationToken cancellationToken)
-            => await _baseRepository.GetById(id)
+            => await _mesaCrud.GetById(id)
                 ?? throw new BusinessException("Mesa no existe.", HttpStatusCode.NotFound);
 
         private async Task ValidarUnicoAsync(GuardarMesaDto dto, int? excluirId, CancellationToken cancellationToken)
         {
-            if (await _context.Mesas.AnyAsync(x => x.Numero == dto.Numero &&
-                (!excluirId.HasValue || x.Id != excluirId.Value), cancellationToken))
+            if (await _unitOfWork.Mesas.ExisteNumeroAsync(dto.Numero, excluirId, cancellationToken))
                 throw new BusinessException("Ya existe un registro con ese número de mesa.", HttpStatusCode.Conflict);
         }
 

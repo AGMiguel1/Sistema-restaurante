@@ -8,6 +8,11 @@ namespace Restaurante.Core.Interfaces
 {
     public interface IMesaRepository : IBaseRepository<Mesa>
     {
+        Task<bool> ExisteNumeroAsync(int numero, int? excluirId, CancellationToken cancellationToken);
+        Task<bool> TieneReservasAsync(int mesaId, CancellationToken cancellationToken);
+        Task<bool> TieneReservaVigenteSobreCapacidadAsync(
+            int mesaId, int capacidad, DateTime ahora, CancellationToken cancellationToken);
+
         // Consulta mesas activas con capacidad suficiente
         // y sin reservas que se crucen con el horario solicitado.
         Task<IReadOnlyList<Mesa>> ObtenerMesasDisponiblesAsync(

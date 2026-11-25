@@ -1,10 +1,10 @@
 using FluentValidation;
-using Microsoft.EntityFrameworkCore;
 using Restaurante.Core.DTOs;
 using Restaurante.Core.Entities;
 using Restaurante.Core.Exceptions;
 using Restaurante.Core.Interfaces;
 using Restaurante.Infrastructure.Data;
+using Restaurante.Infrastructure.Repositories;
 using Restaurante.Services.Interfaces;
 using Restaurante.Services.Validators;
 using System.Net;
@@ -13,20 +13,26 @@ namespace Restaurante.Services.Services;
 
 public class ClienteService : IClienteService
 {
-    private readonly IBaseRepository<Cliente> _repository;
-    private readonly RestauranteContext _context;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IBaseRepository<Cliente> _clienteCrud;
     private readonly GuardarClienteValidator _validator;
 
-    public ClienteService(IBaseRepository<Cliente> repository, RestauranteContext context, GuardarClienteValidator validator)
+    public ClienteService(IUnitOfWork unitOfWork, GuardarClienteValidator validator)
     {
-        _repository = repository;
-        _context = context;
+        _unitOfWork = unitOfWork;
+        _clienteCrud = unitOfWork.Clientes;
         _validator = validator;
+    }
+
+    public ClienteService(IBaseRepository<Cliente> repository, RestauranteContext context, GuardarClienteValidator validator)
+        : this(new UnitOfWork(context), validator)
+    {
+        _clienteCrud = repository;
     }
 
     public async Task<IEnumerable<ClienteDetalleDto>> ObtenerTodosAsync(CancellationToken cancellationToken = default)
     {
-        var entities = (await _repository.GetAll()).OrderBy(x => x.Id);
+        var entities = (await _clienteCrud.GetAll()).OrderBy(x => x.Id);
         return entities.Select(Mapear).ToList();
     }
 
@@ -41,7 +47,8 @@ public class ClienteService : IClienteService
         entity.Nombre = dto.Nombre.Trim();
         entity.Telefono = dto.Telefono.Trim();
         entity.Correo = string.IsNullOrWhiteSpace(dto.Correo) ? null : dto.Correo.Trim();
-        await _repository.Add(entity);
+        await _clienteCrud.Add(entity);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
         return Mapear(entity);
     }
 
@@ -54,26 +61,27 @@ public class ClienteService : IClienteService
         entity.Nombre = dto.Nombre.Trim();
         entity.Telefono = dto.Telefono.Trim();
         entity.Correo = string.IsNullOrWhiteSpace(dto.Correo) ? null : dto.Correo.Trim();
-        await _repository.Update(entity);
+        await _clienteCrud.Update(entity);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
         return Mapear(entity);
     }
 
     public async Task EliminarAsync(int id, CancellationToken cancellationToken = default)
     {
         await BuscarAsync(id, cancellationToken);
-        if ((await _context.Reservas.AnyAsync(r => r.ClienteId == id, cancellationToken) || await _context.Sanciones.AnyAsync(s => s.ClienteId == id, cancellationToken)))
+        if (await _unitOfWork.Clientes.TieneRegistrosAsociadosAsync(id, cancellationToken))
             throw new BusinessException("No se puede eliminar: existen registros relacionados.", HttpStatusCode.Conflict);
-        await _repository.Delete(id);
+        await _clienteCrud.Delete(id);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<Cliente> BuscarAsync(int id, CancellationToken cancellationToken)
-        => await _repository.GetById(id)
+        => await _clienteCrud.GetById(id)
             ?? throw new BusinessException("Cliente no existe.", HttpStatusCode.NotFound);
 
     private async Task ValidarUnicoAsync(GuardarClienteDto dto, int? excluirId, CancellationToken cancellationToken)
     {
-        if (await _context.Clientes.AnyAsync(x => x.Telefono == dto.Telefono.Trim() &&
-            (!excluirId.HasValue || x.Id != excluirId.Value), cancellationToken))
+        if (await _unitOfWork.Clientes.ExisteTelefonoAsync(dto.Telefono.Trim(), excluirId, cancellationToken))
             throw new BusinessException("Ya existe un registro con ese teléfono.", HttpStatusCode.Conflict);
     }
 
