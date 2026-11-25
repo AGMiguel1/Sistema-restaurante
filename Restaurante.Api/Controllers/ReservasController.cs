@@ -1,4 +1,5 @@
-using FluentValidation;
+using Restaurante.Core.Exceptions;
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Restaurante.Api.Response;
 using Restaurante.Core.DTOs;
@@ -39,10 +40,15 @@ namespace Restaurante.Api.Controllers
             [FromBody] CrearReservaDto dto,
             CancellationToken cancellationToken)
         {
+            if (!ModelState.IsValid || dto == null)
+                throw new BusinessException("La solicitud contiene datos inválidos.", HttpStatusCode.BadRequest,
+                    ModelState.SelectMany(x => x.Value!.Errors.Select(e => new { Field = x.Key, Error = string.IsNullOrEmpty(e.ErrorMessage) ? "Valor inválido." : e.ErrorMessage })));
+
             var validacion = await _crearValidator.ValidateAsync(dto, cancellationToken);
             if (!validacion.IsValid)
             {
-                throw new ValidationException(validacion.Errors);
+                throw new BusinessException("Errores de validación en los datos enviados.", HttpStatusCode.BadRequest,
+                    validacion.Errors.Select(e => new { Field = e.PropertyName, Error = e.ErrorMessage }));
             }
 
             var reserva = await _reservaService.RegistrarReservaAsync(dto, cancellationToken);
@@ -57,10 +63,15 @@ namespace Restaurante.Api.Controllers
             [FromBody] ModificarReservaDto dto,
             CancellationToken cancellationToken)
         {
+            if (!ModelState.IsValid || dto == null)
+                throw new BusinessException("La solicitud contiene datos inválidos.", HttpStatusCode.BadRequest,
+                    ModelState.SelectMany(x => x.Value!.Errors.Select(e => new { Field = x.Key, Error = string.IsNullOrEmpty(e.ErrorMessage) ? "Valor inválido." : e.ErrorMessage })));
+
             var validacion = await _modificarValidator.ValidateAsync(dto, cancellationToken);
             if (!validacion.IsValid)
             {
-                throw new ValidationException(validacion.Errors);
+                throw new BusinessException("Errores de validación en los datos enviados.", HttpStatusCode.BadRequest,
+                    validacion.Errors.Select(e => new { Field = e.PropertyName, Error = e.ErrorMessage }));
             }
 
             var reserva = await _reservaService.ModificarReservaAsync(codigo, dto, cancellationToken);
@@ -92,6 +103,16 @@ namespace Restaurante.Api.Controllers
             return Ok(new ApiResponse<IEnumerable<ReservaDetalleDto>>(reservas));
         }
 
+        // DELETE: api/reservas/{codigo}
+        [HttpDelete("{codigo}")]
+        public async Task<IActionResult> EliminarReserva(
+            string codigo,
+            CancellationToken cancellationToken)
+        {
+            await _reservaService.EliminarReservaAsync(codigo, cancellationToken);
+            return NoContent();
+        }
+
         // POST: api/reservas/{codigo}/cancelar (Cancelación Anticipada con Reembolso)
         [HttpPost("{codigo}/cancelar")]
         public async Task<IActionResult> CancelarReserva(
@@ -99,10 +120,15 @@ namespace Restaurante.Api.Controllers
             [FromBody] CancelarReservaDto dto,
             CancellationToken cancellationToken)
         {
+            if (!ModelState.IsValid || dto == null)
+                throw new BusinessException("La solicitud contiene datos inválidos.", HttpStatusCode.BadRequest,
+                    ModelState.SelectMany(x => x.Value!.Errors.Select(e => new { Field = x.Key, Error = string.IsNullOrEmpty(e.ErrorMessage) ? "Valor inválido." : e.ErrorMessage })));
+
             var validacion = await _cancelarValidator.ValidateAsync(dto, cancellationToken);
             if (!validacion.IsValid)
             {
-                throw new ValidationException(validacion.Errors);
+                throw new BusinessException("Errores de validación en los datos enviados.", HttpStatusCode.BadRequest,
+                    validacion.Errors.Select(e => new { Field = e.PropertyName, Error = e.ErrorMessage }));
             }
 
             var resultado = await _reservaService.CancelarReservaAsync(codigo, dto, cancellationToken);

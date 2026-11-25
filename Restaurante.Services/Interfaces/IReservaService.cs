@@ -32,6 +32,11 @@ namespace Restaurante.Services.Interfaces
             string? telefono,
             CancellationToken cancellationToken = default);
 
+        // Eliminar una reserva sin cancelaciones ni sanciones asociadas.
+        Task EliminarReservaAsync(
+            string codigo,
+            CancellationToken cancellationToken = default);
+
         // Cancelación anticipada y cálculo de reembolso.
         Task<ResultadoCancelacionDto> CancelarReservaAsync(
             string codigo,
