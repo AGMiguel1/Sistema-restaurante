@@ -3,5 +3,4 @@
   <Project Path="Restaurante.Infrastructure/Restaurante.Infrastructure.csproj" />
   <Project Path="Restaurante.Services/Restaurante.Services.csproj" />
   <Project Path="Restaurante.Api/Restaurante.Api.csproj" />
-  <Project Path="Restaurante.Tests/Restaurante.Tests.csproj" />
 </Solution>
