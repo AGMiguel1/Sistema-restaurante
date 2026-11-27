@@ -6,7 +6,6 @@ using System.Text;
 using Restaurante.Core.DTOs;
 using Restaurante.Core.Interfaces;
 using Restaurante.Services.Interfaces;
-using Microsoft.AspNetCore.Identity;
 using Restaurante.Core.Entities;
 
 namespace Restaurante.Services.Services
@@ -14,7 +13,6 @@ namespace Restaurante.Services.Services
     public class LoginService : ILoginService
     {
         private readonly IUsuarioRepository _usuarioRepository;
-        private readonly PasswordHasher<Usuario> _passwordHasher;
         private readonly IConfiguration _configuration;
 
         public LoginService(
@@ -23,8 +21,6 @@ namespace Restaurante.Services.Services
         {
             _usuarioRepository = usuarioRepository;
             _configuration = configuration;
-            _passwordHasher = new PasswordHasher<Usuario>();
-
         }
 
         public async Task<LoginResponseDto> LoginAsync(
@@ -49,7 +45,8 @@ namespace Restaurante.Services.Services
                 throw new UnauthorizedAccessException("Credenciales incorrectas.");
             }
 
-            if (!VerificarPassword(usuario, dto.Password))
+            // El prefijo identifica las contraseñas de texto y excluye los formatos anteriores.
+            if (!string.Equals(usuario.Password, Usuario.PrefijoPasswordTexto + dto.Password, StringComparison.Ordinal))
             {
                 throw new UnauthorizedAccessException("Credenciales incorrectas.");
             }
@@ -62,19 +59,6 @@ namespace Restaurante.Services.Services
                 Correo = usuario.Correo,
                 Rol = usuario.Rol
             };
-        }
-
-        private bool VerificarPassword(Usuario usuario, string password)
-        {
-            var guardada = usuario.PasswordHash;
-            if (guardada.StartsWith(Usuario.PrefijoPasswordSinHash, StringComparison.Ordinal))
-            {
-                return string.Equals(guardada[Usuario.PrefijoPasswordSinHash.Length..], password,
-                    StringComparison.Ordinal);
-            }
-
-            return _passwordHasher.VerifyHashedPassword(usuario, guardada, password)
-                != PasswordVerificationResult.Failed;
         }
 
         private string GenerarToken(Usuario usuario)

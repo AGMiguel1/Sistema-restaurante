@@ -16,7 +16,8 @@ namespace Restaurante.Infrastructure.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(150);
 
-            entity.Property(e => e.PasswordHash)
+            entity.Property(e => e.Password)
+                .HasColumnName("PasswordHash")
                 .IsRequired()
                 .HasMaxLength(255);
 
