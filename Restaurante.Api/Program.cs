@@ -19,13 +19,17 @@ namespace Restaurante.Api
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            builder.Configuration
+                .AddJsonFile("appsettings.Local.json", optional: true)
+                .AddEnvironmentVariables()
+                .AddCommandLine(args);
 
-            var jwtKey = builder.Configuration["Jwt:Key"];
+            var jwtKey = builder.Configuration["Authentication:SecretKey"];
             if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetByteCount(jwtKey) < 32)
-                throw new InvalidOperationException("Configura Jwt:Key con una clave privada de al menos 32 bytes.");
+                throw new InvalidOperationException("Configura Authentication:SecretKey con una clave privada de al menos 32 bytes.");
 
-            var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-            var jwtAudience = builder.Configuration["Jwt:Audience"];
+            var jwtIssuer = builder.Configuration["Authentication:Issuer"];
+            var jwtAudience = builder.Configuration["Authentication:Audience"];
 
             builder.Services.AddAuthentication(options =>
             {
