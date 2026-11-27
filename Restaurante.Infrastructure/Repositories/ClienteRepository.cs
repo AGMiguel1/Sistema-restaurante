@@ -20,7 +20,8 @@ namespace Restaurante.Infrastructure.Repositories
 
         public Task<bool> TieneRegistrosAsociadosAsync(int clienteId, CancellationToken cancellationToken)
             => _entities.AnyAsync(c => c.Id == clienteId &&
-                (c.Reservas.Any() || c.Sanciones.Any()), cancellationToken);
+                (c.Reservas.Any() || c.Sanciones.Any() ||
+                 _context.Usuarios.Any(usuario => usuario.ClienteId == c.Id)), cancellationToken);
 
         public async Task<Cliente?> ObtenerPorTelefonoAsync(
             string telefono,

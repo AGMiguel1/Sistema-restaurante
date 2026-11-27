@@ -7,7 +7,7 @@ namespace Restaurante.Services.Interfaces
 {
     public interface IRegistroUsuarioService
     {
-        Task RegistrarAsync(
+        Task<UsuarioDetalleDto> RegistrarAsync(
            RegistroUsuarioDto dto,
            CancellationToken cancellationToken = default);
     }

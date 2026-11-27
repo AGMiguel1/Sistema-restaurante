@@ -20,9 +20,9 @@ namespace Restaurante.Api
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            //------------------------------------------------------
-     var jwtKey = builder.Configuration["Jwt:Key"]
-    ?? throw new InvalidOperationException("No se encontró la clave JWT.");
+            var jwtKey = builder.Configuration["Jwt:Key"];
+            if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetByteCount(jwtKey) < 32)
+                throw new InvalidOperationException("Configura Jwt:Key con una clave privada de al menos 32 bytes.");
 
             var jwtIssuer = builder.Configuration["Jwt:Issuer"];
             var jwtAudience = builder.Configuration["Jwt:Audience"];
@@ -83,11 +83,14 @@ namespace Restaurante.Api
             builder.Services.AddScoped<ISancionRepository, SancionRepository>();
             builder.Services.AddScoped<IConfiguracionReservaRepository, ConfiguracionReservaRepository>();
             builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+            builder.Services.AddScoped<IReportesRepository, ReportesRepository>();
             // 4. Registrar la capa de servicios (Lógica de Negocio).
             builder.Services.AddScoped<IMesaService, MesaService>();
             builder.Services.AddScoped<IClienteService, ClienteService>();
             builder.Services.AddScoped<IReservaService, ReservaService>();
             builder.Services.AddScoped<ILoginService, LoginService>();
+            builder.Services.AddScoped<IRegistroUsuarioService, RegistroUsuarioService>();
+            builder.Services.AddScoped<IReportesService, ReportesService>();
 
             // 5. Configurar controladores suprimiendo el filtro automático para que el middleware maneje validaciones.
             builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
@@ -108,6 +111,7 @@ namespace Restaurante.Api
             builder.Services.AddScoped<CrearReservaValidator>();
             builder.Services.AddScoped<ModificarReservaValidator>();
             builder.Services.AddScoped<CancelarReservaValidator>();
+            builder.Services.AddScoped<RegistroUsuarioValidator>();
 
             var app = builder.Build();
 

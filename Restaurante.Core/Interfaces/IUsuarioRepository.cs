@@ -8,5 +8,6 @@ namespace Restaurante.Core.Interfaces
     {
         Task<Usuario?> ObtenerPorCorreoAsync(string correo,
             CancellationToken cancellationToken = default); 
+        Task<bool> ExisteParaClienteAsync(int clienteId, CancellationToken cancellationToken);
     }
 }
