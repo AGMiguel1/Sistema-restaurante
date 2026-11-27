@@ -25,6 +25,7 @@ public partial class RestauranteContext : DbContext
     public virtual DbSet<EscalaSancion> EscalasSancion { get; set; }
     public virtual DbSet<PoliticaReembolso> PoliticasReembolso { get; set; }
     public virtual DbSet<Sancion> Sanciones { get; set; }
+    public virtual DbSet<Usuario> Usuarios { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -43,5 +44,6 @@ public partial class RestauranteContext : DbContext
         modelBuilder.Entity<EscalaSancion>().ToTable("escalas_sancion");
         modelBuilder.Entity<PoliticaReembolso>().ToTable("politicas_reembolso");
         modelBuilder.Entity<Sancion>().ToTable("sanciones");
+        modelBuilder.Entity<Usuario>().ToTable("usuarios");
     }
 }
