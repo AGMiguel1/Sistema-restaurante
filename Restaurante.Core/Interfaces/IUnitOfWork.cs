@@ -11,6 +11,8 @@ public interface IUnitOfWork
     ICancelacionRepository Cancelaciones { get; }
     ISancionRepository Sanciones { get; }
     IConfiguracionReservaRepository ConfiguracionReservas { get; }
+    IUsuarioRepository Usuarios { get; }
+    IReportesRepository Reportes { get; }
 
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

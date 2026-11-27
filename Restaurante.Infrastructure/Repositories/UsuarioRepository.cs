@@ -26,5 +26,8 @@ namespace Restaurante.Infrastructure.Repositories
                 u => u.Correo == correo.Trim(),
                 cancellationToken);
     }
+
+    public Task<bool> ExisteParaClienteAsync(int clienteId, CancellationToken cancellationToken)
+        => _entities.AnyAsync(usuario => usuario.ClienteId == clienteId, cancellationToken);
 }
 }

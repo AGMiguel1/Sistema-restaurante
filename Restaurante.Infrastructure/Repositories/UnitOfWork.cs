@@ -15,7 +15,9 @@ public class UnitOfWork(
     IReservaRepository reservas,
     ICancelacionRepository cancelaciones,
     ISancionRepository sanciones,
-    IConfiguracionReservaRepository configuracionReservas) : IUnitOfWork
+    IConfiguracionReservaRepository configuracionReservas,
+    IUsuarioRepository usuarios,
+    IReportesRepository reportes) : IUnitOfWork
 {
     public UnitOfWork(
         RestauranteContext context,
@@ -29,12 +31,27 @@ public class UnitOfWork(
     {
     }
 
+    public UnitOfWork(
+        RestauranteContext context,
+        IMesaRepository mesas,
+        IClienteRepository clientes,
+        IReservaRepository reservas,
+        ICancelacionRepository cancelaciones,
+        ISancionRepository sanciones,
+        IConfiguracionReservaRepository configuracionReservas)
+        : this(context, mesas, clientes, reservas, cancelaciones, sanciones, configuracionReservas,
+            new UsuarioRepository(context), new ReportesRepository(new DapperContext(context)))
+    {
+    }
+
     public IMesaRepository Mesas { get; } = mesas;
     public IClienteRepository Clientes { get; } = clientes;
     public IReservaRepository Reservas { get; } = reservas;
     public ICancelacionRepository Cancelaciones { get; } = cancelaciones;
     public ISancionRepository Sanciones { get; } = sanciones;
     public IConfiguracionReservaRepository ConfiguracionReservas { get; } = configuracionReservas;
+    public IUsuarioRepository Usuarios { get; } = usuarios;
+    public IReportesRepository Reportes { get; } = reportes;
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {

@@ -49,13 +49,7 @@ namespace Restaurante.Services.Services
                 throw new UnauthorizedAccessException("Credenciales incorrectas.");
             }
 
-            // 4. Verificar la contraseña
-            var resultado = _passwordHasher.VerifyHashedPassword(
-                usuario,
-                usuario.PasswordHash,
-                dto.Password);
-
-            if (resultado == PasswordVerificationResult.Failed)
+            if (!VerificarPassword(usuario, dto.Password))
             {
                 throw new UnauthorizedAccessException("Credenciales incorrectas.");
             }
@@ -69,6 +63,20 @@ namespace Restaurante.Services.Services
                 Rol = usuario.Rol
             };
         }
+
+        private bool VerificarPassword(Usuario usuario, string password)
+        {
+            var guardada = usuario.PasswordHash;
+            if (guardada.StartsWith(Usuario.PrefijoPasswordSinHash, StringComparison.Ordinal))
+            {
+                return string.Equals(guardada[Usuario.PrefijoPasswordSinHash.Length..], password,
+                    StringComparison.Ordinal);
+            }
+
+            return _passwordHasher.VerifyHashedPassword(usuario, guardada, password)
+                != PasswordVerificationResult.Failed;
+        }
+
         private string GenerarToken(Usuario usuario)
         {
             var jwtKey = _configuration["Jwt:Key"]
