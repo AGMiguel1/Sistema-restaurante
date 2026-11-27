@@ -32,7 +32,7 @@ public class RegistroUsuarioService(
             ClienteId = dto.ClienteId,
             Correo = correo,
             Rol = nameof(RoleType.Consumer),
-            PasswordHash = Usuario.PrefijoPasswordSinHash + dto.Password
+            Password = Usuario.PrefijoPasswordTexto + dto.Password
         };
 
         await unitOfWork.Usuarios.Add(usuario);
